@@ -1,0 +1,16 @@
+[
+  {
+    "target_email": "hello@world.com",
+    "subreddit": "programming",
+    "time_filter": "day",
+    "thread_limit": 10,
+    "cron_trigger": {"hour": 7}
+  },
+  {
+    "target_email": "hello@world.com",
+    "subreddit": "etymology",
+    "time_filter": "day",
+    "thread_limit": 5,
+    "cron_trigger": {"hour": 8}
+  }
+]
