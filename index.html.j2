@@ -1,0 +1,4 @@
+{% for job in jobs %}
+  Job {{ loop.index }}: {{ job.subreddit }} / {{ job.target_email }} / {{ job.cron_trigger }}
+  <br/>
+{% endfor %}

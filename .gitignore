@@ -2,3 +2,4 @@ env
 secrets.json
 jobs.json
 rcollate.log
+__pycache__
