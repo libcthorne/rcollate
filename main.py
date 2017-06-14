@@ -4,6 +4,11 @@ import praw
 import sys
 
 from apscheduler.schedulers.blocking import BlockingScheduler
+from jinja2 import Environment, FileSystemLoader
+
+HTML_EMAIL_TEMPLATE = Environment(
+    loader=FileSystemLoader('.')
+).get_template("email_body.html.j2")
 
 settings = None
 secrets = None
@@ -46,18 +51,12 @@ def send_email(job):
 
     subreddit = reddit.subreddit(job["subreddit"])
 
-    message_body_html = ""
-    for index, reddit_thread in enumerate(subreddit.top(job["time_filter"], limit=job["thread_limit"])):
-        message_body_html += u"{}. {} ({} upvotes)<br/>".format(index+1, reddit_thread.title, reddit_thread.ups)
-        message_body_html += u"  <a href='{}'>{}</a><br/>".format(reddit_thread.url, reddit_thread.url)
-        message_body_html += u"  <a href='https://www.reddit.com{}'>{}</a>".format(
-            reddit_thread.permalink, reddit_thread.permalink
-        )
-        if reddit_thread.selftext:
-            message_body_html += "<p>"
-            message_body_html += reddit_thread.selftext
-            message_body_html += "</p>"
-        message_body_html += "<hr/>"
+    message_body_html = HTML_EMAIL_TEMPLATE.render(
+        r_threads=subreddit.top(
+            job["time_filter"],
+            limit=job["thread_limit"]
+        ),
+    )
 
     message = emails.html(
         html=message_body_html,

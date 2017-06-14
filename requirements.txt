@@ -1,3 +1,4 @@
 emails==0.5.14
 APScheduler==3.3.1
+Jinja2==2.9.6
 praw==4.5.1
