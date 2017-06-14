@@ -1,6 +1,6 @@
 import emails
-import logging
 import json
+import logging
 import praw
 import sys
 
