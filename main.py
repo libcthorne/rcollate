@@ -4,23 +4,11 @@ import praw
 import sys
 
 from apscheduler.schedulers.blocking import BlockingScheduler
-from jinja2 import Template
+from jinja2 import Environment, FileSystemLoader
 
-HTML_EMAIL_TEMPLATE = Template("""
-    {% for r_thread in r_threads %}
-      {{ loop.index }}. {{ r_thread.title }} ({{ r_thread.ups }} upvotes)
-      <br/>
-      <a href='{{ r_thread.url }}'>{{ r_thread.url }}</a>
-      <br/>
-      <a href='https://www.reddit.com{{ r_thread.permalink }}'>{{ r_thread.permalink }}</a>
-
-      {% if r_thread.selftext %}
-        <p>{{ r_thread.selftext }}</p>
-      {% endif %}
-
-      <hr/>
-    {% endfor %}
-""")
+HTML_EMAIL_TEMPLATE = Environment(
+    loader=FileSystemLoader('.')
+).get_template("email_body.html.j2")
 
 settings = None
 secrets = None
