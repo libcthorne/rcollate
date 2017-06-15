@@ -5,20 +5,17 @@ import praw
 import sys
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import Flask
+from apscheduler.schedulers.blocking import BlockingScheduler
 from jinja2 import Environment, FileSystemLoader
 
 TEMPLATES = Environment(loader=FileSystemLoader('.'))
 HTML_EMAIL_TEMPLATE = TEMPLATES.get_template("email_body.html.j2")
-INDEX_TEMPLATE = TEMPLATES.get_template("index.html.j2")
 
 logger = None
 
 settings = None
 secrets = None
 jobs = None
-
-app = Flask(__name__)
 
 def init_logger():
     global logger
@@ -107,20 +104,18 @@ def send_email(job):
             job["subreddit"], job["target_email"], r.status_code, r.error
         ))
 
-@app.route("/")
-def index():
-    return INDEX_TEMPLATE.render(jobs=jobs)
-
-def init():
+def init(block=False):
     init_logger()
 
     load_config_files()
 
-    scheduler = BackgroundScheduler()
+    scheduler_cls = BlockingScheduler if block else BackgroundScheduler
+    scheduler = scheduler_cls()
 
     for job in jobs:
         scheduler.add_job(send_email, 'cron', [job], **job["cron_trigger"])
 
     scheduler.start()
 
-init()
+if __name__ == "__main__":
+    init(block=True)
