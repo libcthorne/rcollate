@@ -1,6 +1,6 @@
 {
   "user_agent": "web:rcollate:0.1 (by /u/libcthorne)",
-  "sender_name": "rCollate",
+  "sender_name": "rcollate",
   "sender_email": "rcollate@cthorne.me",
   "smtp_host": "localhost",
   "smtp_timeout": 5

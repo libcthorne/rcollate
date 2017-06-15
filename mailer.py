@@ -84,7 +84,7 @@ def send_email(job):
 
     message = emails.html(
         html=message_body_html,
-        subject="/r/{}".format(job["subreddit"]),
+        subject="Top threads in /r/{}".format(job["subreddit"]),
         mail_from=(
             settings["sender_name"], settings["sender_email"]
         )
