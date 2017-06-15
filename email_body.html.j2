@@ -1,13 +1,9 @@
 {% for r_thread in r_threads %}
-  {{ loop.index }}. {{ r_thread.title }} ({{ r_thread.ups }} upvotes)
-  <br/>
+  <h4>{{ loop.index }}. {{ r_thread.title }} ({{ r_thread.ups }} upvotes, <a href='https://www.reddit.com{{ r_thread.permalink }}'>thread</a>)</h4>
+
   <a href='{{ r_thread.url }}'>{{ r_thread.url }}</a>
-  <br/>
-  <a href='https://www.reddit.com{{ r_thread.permalink }}'>{{ r_thread.permalink }}</a>
 
   {% if r_thread.selftext %}
     <p>{{ r_thread.selftext }}</p>
   {% endif %}
-
-  <hr/>
 {% endfor %}
