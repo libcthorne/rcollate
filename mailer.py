@@ -104,7 +104,7 @@ def send_email(job):
             job["subreddit"], job["target_email"], r.status_code, r.error
         ))
 
-def init(block=False):
+def start(block=False):
     init_logger()
 
     load_config_files()
@@ -118,4 +118,4 @@ def init(block=False):
     scheduler.start()
 
 if __name__ == "__main__":
-    init(block=True)
+    start(block=True)

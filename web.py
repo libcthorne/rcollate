@@ -12,4 +12,4 @@ app = Flask(__name__)
 def index():
     return INDEX_TEMPLATE.render(jobs=mailer.jobs)
 
-mailer.init()
+mailer.start()
