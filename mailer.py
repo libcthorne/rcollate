@@ -12,7 +12,7 @@ TEMPLATES = Environment(loader=FileSystemLoader('.'))
 HTML_EMAIL_TEMPLATE = TEMPLATES.get_template("email_body.html.j2")
 
 logger = None
-
+scheduler = None
 settings = None
 secrets = None
 jobs = None
@@ -38,10 +38,9 @@ def init_logger():
     fh.setFormatter(formatter)
     logger.addHandler(fh)
 
-def load_config_files():
+def load_config():
     global settings
     global secrets
-    global jobs
 
     try:
         with open('settings.json') as f:
@@ -57,11 +56,31 @@ def load_config_files():
         logger.error("secrets.json missing (see example_secrets.json for a template)")
         sys.exit(1)
 
+def load_jobs():
+    global jobs
+
     try:
         with open('jobs.json') as f:
             jobs = json.load(f)
     except IOError:
         logger.error("jobs.json missing (see example_jobs.json for a template)")
+        sys.exit(1)
+
+def save_jobs():
+    try:
+        serialized_jobs = [
+            {
+                k: job[k]
+                for k in job
+                if k[0] != '_'
+            }
+            for job in jobs
+        ]
+
+        with open('jobs.json', 'w') as f:
+            json.dump(serialized_jobs, f, indent=4)
+    except IOError:
+        logger.error("Failed to save jobs to jobs.json")
         sys.exit(1)
 
 def send_email(job):
@@ -104,16 +123,38 @@ def send_email(job):
             job["subreddit"], job["target_email"], r.status_code, r.error
         ))
 
+def is_valid_job_id(job_id):
+    return job_id >= 1 and job_id <= len(jobs)
+
+def get_job_by_id(job_id):
+    return jobs[job_id-1]
+
+def update_job(job_id, subreddit, target_email, cron_trigger):
+    job = get_job_by_id(job_id)
+    job['subreddit'] = subreddit
+    job['target_email'] = target_email
+    job['cron_trigger'] = cron_trigger
+    job['_handle'].reschedule('cron', **cron_trigger)
+
+    save_jobs()
+
 def start(block=False):
+    global scheduler
+
     init_logger()
 
-    load_config_files()
+    load_config()
+    load_jobs()
 
     scheduler_cls = BlockingScheduler if block else BackgroundScheduler
     scheduler = scheduler_cls()
 
-    for job in jobs:
-        scheduler.add_job(send_email, 'cron', [job], **job["cron_trigger"])
+    for index, job in enumerate(jobs):
+        job_id = index + 1
+        job['_id'] = job_id
+        job['_handle'] = scheduler.add_job(
+           send_email, 'cron', [job], **job["cron_trigger"]
+        )
 
     scheduler.start()
 

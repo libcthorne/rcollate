@@ -1,0 +1,7 @@
+{% for job in jobs %}
+  <a href="/jobs/{{ loop.index }}/">Job {{ loop.index }}: {{ job.subreddit }} / {{ job.target_email }} / {{ job.cron_trigger }}</a>
+  <span>[</span>
+  <a href="/jobs/{{ loop.index }}/edit/">edit</a>
+  <span>]</span>
+  <br/>
+{% endfor %}
