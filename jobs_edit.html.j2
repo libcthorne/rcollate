@@ -1,0 +1,9 @@
+<form action="/jobs/{{ job._id }}/" method="post">
+  Subreddit: <input type="text" name="subreddit" value="{{ job.subreddit }}"/>
+  <br/>
+  Target email: <input type="text" name="target_email" value="{{ job.target_email }}"/>
+  <br/>
+  Cron trigger: <input type="text" name="cron_trigger" value="{{ job.cron_trigger }}">
+  <br/>
+  <input type="submit" value="Save"/>
+</form>
