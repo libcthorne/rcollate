@@ -8,7 +8,7 @@ import resources
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.blocking import BlockingScheduler
 
-from rmailer import RedditMailer
+from mailer import Mailer
 
 SETTINGS_FILE = "settings.json"
 SECRETS_FILE = "secrets.json"
@@ -89,7 +89,7 @@ def start(block=False):
     settings = resources.read_json_file(SETTINGS_FILE)
     secrets = resources.read_json_file(SECRETS_FILE)
     jobs = read_jobs()
-    mailer = RedditMailer(
+    mailer = Mailer(
         smtp_host=settings["smtp_host"],
         smtp_timeout=settings["smtp_timeout"],
         sender_name=settings["sender_name"],
