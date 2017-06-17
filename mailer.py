@@ -14,7 +14,7 @@ sender_email = None
 
 logger = logs.get_logger()
 
-class RedditMailer(object):
+class Mailer(object):
     def __init__(self, smtp_host, smtp_timeout, sender_name, sender_email):
         self.smtp_host = smtp_host
         self.smtp_timeout = smtp_timeout
