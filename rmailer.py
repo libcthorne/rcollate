@@ -4,7 +4,7 @@ import logs
 
 from jinja2 import Environment, FileSystemLoader
 
-TEMPLATES = Environment(loader=FileSystemLoader('.'))
+TEMPLATES = Environment(loader=FileSystemLoader('templates'))
 HTML_EMAIL_TEMPLATE = TEMPLATES.get_template("email_body.html.j2")
 
 smtp_host = None

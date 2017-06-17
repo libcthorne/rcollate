@@ -5,7 +5,7 @@ import rcollate
 from flask import Flask, request
 from jinja2 import Environment, FileSystemLoader
 
-TEMPLATES = Environment(loader=FileSystemLoader('.'))
+TEMPLATES = Environment(loader=FileSystemLoader('templates'))
 INDEX_TEMPLATE = TEMPLATES.get_template("index.html.j2")
 JOBS_INDEX_TEMPLATE = TEMPLATES.get_template("jobs_index.html.j2")
 JOBS_SHOW_TEMPLATE = TEMPLATES.get_template("jobs_show.html.j2")
