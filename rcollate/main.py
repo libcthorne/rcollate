@@ -13,10 +13,17 @@ SETTINGS_FILE = "config/settings.json"
 SECRETS_FILE = "config/secrets.json"
 JOBS_FILE = "db/jobs.json"
 
+JOB_DEFAULTS = {
+    "thread_limit": 10,
+    "time_filter": "day",
+}
+
 settings = None
 secrets = None
 jobs = None
+
 mailer = None
+scheduler = None
 
 logger = logs.get_logger()
 
@@ -45,7 +52,6 @@ def write_jobs():
     except IOError:
         logger.error("Failed to save jobs to %s", JOBS_FILE)
 
-
 def run_job(job):
     reddit = praw.Reddit(
         client_id=secrets["client_id"],
@@ -64,6 +70,19 @@ def run_job(job):
         subreddit=job["subreddit"],
     )
 
+def create_job(subreddit, target_email, cron_trigger):
+    job = JOB_DEFAULTS.copy()
+    job['subreddit'] = subreddit
+    job['target_email'] = target_email
+    job['cron_trigger'] = cron_trigger
+    job['_id'] = get_next_job_id()
+    job['_handle'] = scheduler.add_job(
+       run_job, 'cron', [job], **job["cron_trigger"]
+    )
+
+    jobs.append(job)
+    write_jobs()
+
 def update_job(job_id, subreddit, target_email, cron_trigger):
     job = get_job_by_id(job_id)
     job['subreddit'] = subreddit
@@ -79,11 +98,15 @@ def is_valid_job_id(job_id):
 def get_job_by_id(job_id):
     return jobs[job_id-1]
 
+def get_next_job_id():
+    return len(jobs)+1
+
 def start(block=False):
     global settings
     global secrets
     global jobs
     global mailer
+    global scheduler
 
     settings = resources.read_json_file(SETTINGS_FILE)
     secrets = resources.read_json_file(SECRETS_FILE)
