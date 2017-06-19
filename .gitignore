@@ -1,5 +1,6 @@
 env
 secrets.json
 jobs.json
+web_admin.json
 rcollate.log
 __pycache__
