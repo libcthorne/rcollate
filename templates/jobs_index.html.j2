@@ -1,7 +1,11 @@
-{% for job in jobs %}
-  <a href="/jobs/{{ loop.index }}/">Job {{ loop.index }}: {{ job.subreddit }} / {{ job.target_email }} / {{ job.cron_trigger }}</a>
+{% for job_id, job in jobs.items() %}
+  <a href="/jobs/{{ job_id }}/">Job {{ job_id }}: {{ job.subreddit }} / {{ job.target_email }} / {{ job.cron_trigger }}</a>
   <span>[</span>
-  <a href="/jobs/{{ loop.index }}/edit/">edit</a>
+  <a href="/jobs/{{ job_id }}/edit/">edit</a>
+  <span>,</span>
+  <form action="/jobs/{{ job_id }}/delete/" method="post">
+    <input type="submit" value="delete"/>
+  </form>
   <span>]</span>
   <br/>
 {% endfor %}
