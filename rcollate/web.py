@@ -69,9 +69,7 @@ def jobs_update(job_id):
         cron_trigger=cron_trigger
     )
 
-    new_key = rcollate.get_job_key(job_id)
-    print(new_key)
-    return redirect(url_for('jobs_show', job_id=job_id, key=new_key))
+    return redirect(url_for('jobs_show', job_id=job_id, key=rcollate.get_job_key(job_id)))
 
 @app.route("/jobs/<string:job_id>/edit/")
 def jobs_edit(job_id):
