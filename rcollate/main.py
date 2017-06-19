@@ -91,6 +91,8 @@ def create_job(subreddit, target_email, cron_trigger):
 
     write_jobs()
 
+    return job
+
 def update_job(job_id, subreddit, target_email, cron_trigger):
     job = get_job_by_id(job_id)
     job['subreddit'] = subreddit
