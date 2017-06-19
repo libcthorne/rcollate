@@ -10,9 +10,9 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 
 from mailer import Mailer
 
-SETTINGS_FILE = "settings.json"
-SECRETS_FILE = "secrets.json"
-JOBS_FILE = "jobs.json"
+SETTINGS_FILE = "config/settings.json"
+SECRETS_FILE = "config/secrets.json"
+JOBS_FILE = "db/jobs.json"
 
 settings = None
 secrets = None
