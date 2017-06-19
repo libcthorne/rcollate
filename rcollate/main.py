@@ -80,7 +80,9 @@ def create_job(subreddit, target_email, cron_trigger):
        run_job, 'cron', [job], **job["cron_trigger"]
     )
 
-    jobs[get_next_job_id()] = job
+    job_id = get_next_job_id()
+    job['_id'] = job_id
+    jobs[job_id] = job
 
     write_jobs()
 
