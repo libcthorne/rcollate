@@ -1,5 +1,8 @@
+import hashlib
 import json
 import praw
+import random
+import string
 import sys
 
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -18,6 +21,8 @@ JOB_DEFAULTS = {
     "time_filter": "day",
 }
 
+JOB_ID_LENGTH = 12
+
 settings = None
 secrets = None
 jobs = None
@@ -33,14 +38,14 @@ def read_jobs():
 
     for job_id, job in serialized_jobs.items():
         job['_id'] = job_id
-        jobs[int(job_id)] = job
+        jobs[job_id] = job
 
     return jobs
 
 def write_jobs():
     try:
         serialized_jobs = {
-            str(job_id): {
+            job_id: {
                 k: job[k]
                 for k in job
                 if k[0] != '_'
@@ -80,7 +85,7 @@ def create_job(subreddit, target_email, cron_trigger):
        run_job, 'cron', [job], **job["cron_trigger"]
     )
 
-    job_id = get_next_job_id()
+    job_id = get_new_job_id()
     job['_id'] = job_id
     jobs[job_id] = job
 
@@ -102,24 +107,29 @@ def delete_job(job_id):
 
     write_jobs()
 
+def get_job_key(job_id):
+    return hashlib.sha1(jobs[job_id]['target_email'].encode('utf-8')).hexdigest()
+
+def can_view_job(job_id, key):
+    return is_valid_job_id(job_id) and key == get_job_key(job_id)
+
 def is_valid_job_id(job_id):
     return job_id in jobs
 
 def get_job_by_id(job_id):
     return jobs[job_id]
 
-def get_last_job_id():
-    # Note: this could be O(1) by storing the last new job
+def get_new_job_id():
+    while True:
+        random_id = ''.join(
+            random.SystemRandom().choice(
+                string.ascii_lowercase + string.ascii_uppercase + string.digits
+            )
+            for _ in range(JOB_ID_LENGTH)
+        )
 
-    last_job_id = 0
-
-    for job_id in jobs.keys():
-        last_job_id = max(job_id, last_job_id)
-
-    return last_job_id
-
-def get_next_job_id():
-    return get_last_job_id() + 1
+        if random_id not in jobs:
+            return random_id
 
 def start(block=False):
     global settings

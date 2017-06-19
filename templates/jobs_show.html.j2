@@ -1,4 +1,6 @@
+{% set job_key = get_job_key(job._id) %}
+
 {{ job.subreddit }} / {{ job.target_email }} / {{ job.cron_trigger }}
 <span>[</span>
-<a href="/jobs/{{ job._id }}/edit/">edit</a>
+<a href="/jobs/{{ job._id }}/edit/?key={{ job_key }}">edit</a>
 <span>]</span>
