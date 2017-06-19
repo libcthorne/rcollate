@@ -1,6 +1,6 @@
 import ast
 
-import rcollate
+import main as rcollate
 
 from flask import Flask, request
 from jinja2 import Environment, FileSystemLoader
