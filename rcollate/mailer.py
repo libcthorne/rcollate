@@ -7,11 +7,6 @@ from jinja2 import Environment, FileSystemLoader
 TEMPLATES = Environment(loader=FileSystemLoader('templates'))
 HTML_EMAIL_TEMPLATE = TEMPLATES.get_template("email_body.html.j2")
 
-smtp_host = None
-smtp_timeout = None
-sender_name = None
-sender_email = None
-
 logger = logs.get_logger()
 
 class Mailer(object):
