@@ -105,3 +105,6 @@ def start(block=False):
         )
 
     scheduler.start()
+
+if __name__ == "__main__":
+    start(block=True)
