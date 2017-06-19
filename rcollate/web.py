@@ -1,6 +1,6 @@
 import ast
 
-from flask import Flask, request
+from flask import Flask, redirect, request, url_for
 from jinja2 import Environment, FileSystemLoader
 
 import main as rcollate
@@ -67,6 +67,15 @@ def jobs_create():
     )
 
     return jobs_index()
+
+@app.route("/jobs/<int:job_id>/delete/", methods=['POST'])
+def jobs_delete(job_id):
+    if not rcollate.is_valid_job_id(job_id):
+        return "Job %d not found" % job_id
+
+    rcollate.delete_job(job_id)
+
+    return redirect(url_for("jobs_index"))
 
 @app.route("/")
 def index():

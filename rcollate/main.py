@@ -28,24 +28,25 @@ scheduler = None
 logger = logs.get_logger()
 
 def read_jobs():
-    jobs = resources.read_json_file(JOBS_FILE, required=False, default=[])
+    serialized_jobs = resources.read_json_file(JOBS_FILE, required=False, default=[])
+    jobs = {}
 
-    for index, job in enumerate(jobs):
-        job_id = index + 1
+    for job_id, job in serialized_jobs.items():
         job['_id'] = job_id
+        jobs[int(job_id)] = job
 
     return jobs
 
 def write_jobs():
     try:
-        serialized_jobs = [
-            {
+        serialized_jobs = {
+            str(job_id): {
                 k: job[k]
                 for k in job
                 if k[0] != '_'
             }
-            for job in jobs
-        ]
+            for job_id, job in jobs.items()
+        }
 
         with open(JOBS_FILE, 'w') as f:
             json.dump(serialized_jobs, f, indent=4)
@@ -75,12 +76,12 @@ def create_job(subreddit, target_email, cron_trigger):
     job['subreddit'] = subreddit
     job['target_email'] = target_email
     job['cron_trigger'] = cron_trigger
-    job['_id'] = get_next_job_id()
     job['_handle'] = scheduler.add_job(
        run_job, 'cron', [job], **job["cron_trigger"]
     )
 
-    jobs.append(job)
+    jobs[get_next_job_id()] = job
+
     write_jobs()
 
 def update_job(job_id, subreddit, target_email, cron_trigger):
@@ -92,14 +93,31 @@ def update_job(job_id, subreddit, target_email, cron_trigger):
 
     write_jobs()
 
+def delete_job(job_id):
+    job = jobs[job_id]
+    job['_handle'].remove()
+    del jobs[job_id]
+
+    write_jobs()
+
 def is_valid_job_id(job_id):
-    return job_id >= 1 and job_id <= len(jobs)
+    return job_id in jobs
 
 def get_job_by_id(job_id):
-    return jobs[job_id-1]
+    return jobs[job_id]
+
+def get_last_job_id():
+    # Note: this could be O(1) by storing the last new job
+
+    last_job_id = 0
+
+    for job_id in jobs.keys():
+        last_job_id = max(job_id, last_job_id)
+
+    return last_job_id
 
 def get_next_job_id():
-    return len(jobs)+1
+    return get_last_job_id() + 1
 
 def start(block=False):
     global settings
@@ -121,7 +139,7 @@ def start(block=False):
     scheduler_cls = BlockingScheduler if block else BackgroundScheduler
     scheduler = scheduler_cls()
 
-    for index, job in enumerate(jobs):
+    for job in jobs.values():
         job['_handle'] = scheduler.add_job(
            run_job, 'cron', [job], **job["cron_trigger"]
         )
