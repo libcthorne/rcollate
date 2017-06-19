@@ -2,13 +2,12 @@ import json
 import praw
 import sys
 
-import logs
-import resources
-
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.schedulers.blocking import BlockingScheduler
-
 from mailer import Mailer
+
+import logs
+import resources
 
 SETTINGS_FILE = "config/settings.json"
 SECRETS_FILE = "config/secrets.json"
