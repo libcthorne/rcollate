@@ -1,4 +1,6 @@
-<form action="/jobs/{{ job._id }}/" method="post">
+{% set job_key = get_job_key(job._id) %}
+
+<form action="/jobs/{{ job._id }}/?key={{ job_key }}" method="post">
   Subreddit: <input type="text" name="subreddit" value="{{ job.subreddit }}"/>
   <br/>
   Target email: <input type="text" name="target_email" value="{{ job.target_email }}"/>

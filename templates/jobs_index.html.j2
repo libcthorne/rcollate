@@ -1,9 +1,11 @@
 {% for job_id, job in jobs.items() %}
-  <a href="/jobs/{{ job_id }}/">Job {{ job_id }}: {{ job.subreddit }} / {{ job.target_email }} / {{ job.cron_trigger }}</a>
+  {% set job_key = get_job_key(job_id) %}
+
+  <a href="/jobs/{{ job_id }}/?key={{ job_key }}">Job [{{ job_id }}]: {{ job.subreddit }} / {{ job.target_email }} / {{ job.cron_trigger }}</a>
   <span>[</span>
-  <a href="/jobs/{{ job_id }}/edit/">edit</a>
+  <a href="/jobs/{{ job_id }}/edit/?key={{ job_key }}">edit</a>
   <span>,</span>
-  <form action="/jobs/{{ job_id }}/delete/" method="post">
+  <form action="/jobs/{{ job_id }}/delete/?key={{ job_key }}" method="post">
     <input type="submit" value="delete"/>
   </form>
   <span>]</span>
