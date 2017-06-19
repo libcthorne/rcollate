@@ -10,6 +10,7 @@ INDEX_TEMPLATE = TEMPLATES.get_template("index.html.j2")
 JOBS_INDEX_TEMPLATE = TEMPLATES.get_template("jobs_index.html.j2")
 JOBS_SHOW_TEMPLATE = TEMPLATES.get_template("jobs_show.html.j2")
 JOBS_EDIT_TEMPLATE = TEMPLATES.get_template("jobs_edit.html.j2")
+JOBS_NEW_TEMPLATE = TEMPLATES.get_template("jobs_new.html.j2")
 
 app = Flask(__name__)
 
@@ -48,6 +49,24 @@ def jobs_edit(job_id):
         return "Job %d not found" % job_id
 
     return JOBS_EDIT_TEMPLATE.render(job=rcollate.get_job_by_id(job_id))
+
+@app.route("/jobs/new/")
+def jobs_new():
+    return JOBS_NEW_TEMPLATE.render()
+
+@app.route("/jobs/", methods=['POST'])
+def jobs_create():
+    subreddit = request.form['subreddit']
+    target_email = request.form['target_email']
+    cron_trigger = ast.literal_eval(request.form['cron_trigger'])
+
+    rcollate.create_job(
+        subreddit=subreddit,
+        target_email=target_email,
+        cron_trigger=cron_trigger
+    )
+
+    return jobs_index()
 
 @app.route("/")
 def index():
