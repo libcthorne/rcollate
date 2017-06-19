@@ -88,13 +88,13 @@ def jobs_create():
     target_email = request.form['target_email']
     cron_trigger = ast.literal_eval(request.form['cron_trigger'])
 
-    rcollate.create_job(
+    job = rcollate.create_job(
         subreddit=subreddit,
         target_email=target_email,
         cron_trigger=cron_trigger
     )
 
-    return jobs_index()
+    return redirect(url_for('jobs_show', job_id=job['_id'], key=rcollate.get_job_key(job['_id'])))
 
 @app.route("/jobs/<string:job_id>/delete/", methods=['POST'])
 def jobs_delete(job_id):
@@ -107,6 +107,6 @@ def jobs_delete(job_id):
 
 @app.route("/")
 def index():
-    return INDEX_TEMPLATE.render()
+    return jobs_new()
 
 rcollate.start()
