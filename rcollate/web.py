@@ -1,9 +1,13 @@
 import ast
+from functools import wraps
 
-from flask import Flask, redirect, request, url_for
+from flask import Flask, Response, redirect, request, url_for
 from jinja2 import Environment, FileSystemLoader
 
 import main as rcollate
+import resources
+
+WEB_ADMIN_FILE = "config/web_admin.json"
 
 TEMPLATES = Environment(loader=FileSystemLoader('templates'))
 INDEX_TEMPLATE = TEMPLATES.get_template("index.html.j2")
@@ -12,9 +16,31 @@ JOBS_SHOW_TEMPLATE = TEMPLATES.get_template("jobs_show.html.j2")
 JOBS_EDIT_TEMPLATE = TEMPLATES.get_template("jobs_edit.html.j2")
 JOBS_NEW_TEMPLATE = TEMPLATES.get_template("jobs_new.html.j2")
 
+web_admin = resources.read_json_file(WEB_ADMIN_FILE)
+
 app = Flask(__name__)
 
+def check_auth(username, password):
+    return username == web_admin['username'] and password == web_admin['password']
+
+def authenticate():
+    """Sends a 401 response that enables basic auth"""
+    return Response(
+    'Could not verify your access level for that URL.\n'
+    'You have to login with proper credentials', 401,
+    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+
+def requires_admin(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+    return decorated
+
 @app.route("/jobs/")
+@requires_admin
 def jobs_index():
     return JOBS_INDEX_TEMPLATE.render(jobs=rcollate.jobs)
 
