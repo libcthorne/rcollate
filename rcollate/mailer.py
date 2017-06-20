@@ -15,11 +15,14 @@ class Mailer(object):
         self.sender_name = sender_name
         self.sender_email = sender_email
 
-    def send_threads(self, r_threads, target_email, subreddit):
+    def send_threads(self, r_threads, target_email, subreddit, job_view_url):
         logger.info("Send /r/{} threads to {}".format(subreddit, target_email))
 
         message = emails.html(
-            html=HTML_EMAIL_TEMPLATE.render(r_threads=r_threads),
+            html=HTML_EMAIL_TEMPLATE.render(
+                r_threads=r_threads,
+                job_view_url=job_view_url,
+            ),
             subject="Top threads in /r/{}".format(subreddit),
             mail_from=(self.sender_name, self.sender_email)
         )

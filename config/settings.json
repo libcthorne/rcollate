@@ -3,5 +3,6 @@
   "sender_name": "rcollate",
   "sender_email": "rcollate@cthorne.me",
   "smtp_host": "localhost",
-  "smtp_timeout": 5
+  "smtp_timeout": 5,
+  "app_url": "http://localhost:5000"
 }
