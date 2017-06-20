@@ -7,3 +7,7 @@
 
 <br/><br/>
 <a href="/jobs/new/">New Job</a>
+
+<form action="/jobs/{{ job._id }}/delete/?key={{ job_key }}" method="post">
+  <input type="submit" value="delete"/>
+</form>
