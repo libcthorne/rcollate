@@ -1,164 +1,112 @@
-import hashlib
-import json
-import praw
-import random
-import string
-import sys
+import ast
+from functools import wraps
 
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.schedulers.blocking import BlockingScheduler
-from mailer import Mailer
+from flask import Flask, Response, redirect, request, url_for
+from jinja2 import Environment, FileSystemLoader
 
-import logs
 import resources
+import scheduler
 
-SETTINGS_FILE = "config/settings.json"
-SECRETS_FILE = "config/secrets.json"
-JOBS_FILE = "db/jobs.json"
+WEB_ADMIN_FILE = "config/web_admin.json"
 
-JOB_DEFAULTS = {
-    "thread_limit": 10,
-    "time_filter": "day",
-}
+TEMPLATES = Environment(loader=FileSystemLoader('templates'))
+TEMPLATES.globals.update(get_job_key=scheduler.get_job_key)
 
-JOB_ID_LENGTH = 12
+INDEX_TEMPLATE = TEMPLATES.get_template("index.html.j2")
+JOBS_INDEX_TEMPLATE = TEMPLATES.get_template("jobs_index.html.j2")
+JOBS_SHOW_TEMPLATE = TEMPLATES.get_template("jobs_show.html.j2")
+JOBS_EDIT_TEMPLATE = TEMPLATES.get_template("jobs_edit.html.j2")
+JOBS_NEW_TEMPLATE = TEMPLATES.get_template("jobs_new.html.j2")
 
-settings = None
-secrets = None
-jobs = None
+web_admin = resources.read_json_file(WEB_ADMIN_FILE)
 
-mailer = None
-scheduler = None
+app = Flask(__name__)
 
-logger = logs.get_logger()
+def check_auth(username, password):
+    return username == web_admin['username'] and password == web_admin['password']
 
-def read_jobs():
-    serialized_jobs = resources.read_json_file(JOBS_FILE, required=False, default=[])
-    jobs = {}
+def authenticate():
+    """Sends a 401 response that enables basic auth"""
+    return Response(
+    'Could not verify your access level for that URL.\n'
+    'You have to login with proper credentials', 401,
+    {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
-    for job_id, job in serialized_jobs.items():
-        job['_id'] = job_id
-        jobs[job_id] = job
+def requires_admin(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+    return decorated
 
-    return jobs
+@app.route("/jobs/")
+@requires_admin
+def jobs_index():
+    return JOBS_INDEX_TEMPLATE.render(jobs=scheduler.jobs)
 
-def write_jobs():
-    try:
-        serialized_jobs = {
-            job_id: {
-                k: job[k]
-                for k in job
-                if k[0] != '_'
-            }
-            for job_id, job in jobs.items()
-        }
+@app.route("/jobs/<string:job_id>/")
+def jobs_show(job_id):
+    if not scheduler.can_view_job(job_id, request.args.get('key')):
+        return "Job %s not found" % job_id
 
-        with open(JOBS_FILE, 'w') as f:
-            json.dump(serialized_jobs, f, indent=4)
-    except IOError:
-        logger.error("Failed to save jobs to %s", JOBS_FILE)
+    return JOBS_SHOW_TEMPLATE.render(job=scheduler.get_job_by_id(job_id))
 
-def run_job(job):
-    reddit = praw.Reddit(
-        client_id=secrets["client_id"],
-        client_secret=secrets["client_secret"],
-        user_agent=settings["user_agent"]
+@app.route("/jobs/<string:job_id>/", methods=['POST'])
+def jobs_update(job_id):
+    if not scheduler.can_view_job(job_id, request.args.get('key')):
+        return "Job %s not found" % job_id
+
+    subreddit = request.form['subreddit']
+    target_email = request.form['target_email']
+    cron_trigger = ast.literal_eval(request.form['cron_trigger'])
+
+    scheduler.update_job(
+        job_id=job_id,
+        subreddit=subreddit,
+        target_email=target_email,
+        cron_trigger=cron_trigger
     )
 
-    subreddit = reddit.subreddit(job["subreddit"])
+    return redirect(url_for('jobs_show', job_id=job_id, key=scheduler.get_job_key(job_id)))
 
-    mailer.send_threads(
-        r_threads=subreddit.top(
-            job["time_filter"],
-            limit=job["thread_limit"]
-        ),
-        target_email=job["target_email"],
-        subreddit=job["subreddit"],
+@app.route("/jobs/<string:job_id>/edit/")
+def jobs_edit(job_id):
+    if not scheduler.can_view_job(job_id, request.args.get('key')):
+        return "Job %s not found" % job_id
+
+    return JOBS_EDIT_TEMPLATE.render(job=scheduler.get_job_by_id(job_id))
+
+@app.route("/jobs/new/")
+def jobs_new():
+    return JOBS_NEW_TEMPLATE.render()
+
+@app.route("/jobs/", methods=['POST'])
+def jobs_create():
+    subreddit = request.form['subreddit']
+    target_email = request.form['target_email']
+    cron_trigger = ast.literal_eval(request.form['cron_trigger'])
+
+    job = scheduler.create_job(
+        subreddit=subreddit,
+        target_email=target_email,
+        cron_trigger=cron_trigger
     )
 
-def create_job(subreddit, target_email, cron_trigger):
-    job = JOB_DEFAULTS.copy()
-    job['subreddit'] = subreddit
-    job['target_email'] = target_email
-    job['cron_trigger'] = cron_trigger
-    job['_handle'] = scheduler.add_job(
-       run_job, 'cron', [job], **job["cron_trigger"]
-    )
+    return redirect(url_for('jobs_show', job_id=job['_id'], key=scheduler.get_job_key(job['_id'])))
 
-    job_id = get_new_job_id()
-    job['_id'] = job_id
-    jobs[job_id] = job
+@app.route("/jobs/<string:job_id>/delete/", methods=['POST'])
+def jobs_delete(job_id):
+    if not scheduler.can_view_job(job_id, request.args.get('key')):
+        return "Job %s not found" % job_id
 
-    write_jobs()
+    scheduler.delete_job(job_id)
 
-    return job
+    return redirect(url_for("jobs_index"))
 
-def update_job(job_id, subreddit, target_email, cron_trigger):
-    job = get_job_by_id(job_id)
-    job['subreddit'] = subreddit
-    job['target_email'] = target_email
-    job['cron_trigger'] = cron_trigger
-    job['_handle'].reschedule('cron', **cron_trigger)
+@app.route("/")
+def index():
+    return jobs_new()
 
-    write_jobs()
-
-def delete_job(job_id):
-    job = jobs[job_id]
-    job['_handle'].remove()
-    del jobs[job_id]
-
-    write_jobs()
-
-def get_job_key(job_id):
-    return hashlib.sha1(jobs[job_id]['target_email'].encode('utf-8')).hexdigest()
-
-def can_view_job(job_id, key):
-    return is_valid_job_id(job_id) and key == get_job_key(job_id)
-
-def is_valid_job_id(job_id):
-    return job_id in jobs
-
-def get_job_by_id(job_id):
-    return jobs[job_id]
-
-def get_new_job_id():
-    while True:
-        random_id = ''.join(
-            random.SystemRandom().choice(
-                string.ascii_lowercase + string.ascii_uppercase + string.digits
-            )
-            for _ in range(JOB_ID_LENGTH)
-        )
-
-        if random_id not in jobs:
-            return random_id
-
-def start(block=False):
-    global settings
-    global secrets
-    global jobs
-    global mailer
-    global scheduler
-
-    settings = resources.read_json_file(SETTINGS_FILE)
-    secrets = resources.read_json_file(SECRETS_FILE)
-    jobs = read_jobs()
-    mailer = Mailer(
-        smtp_host=settings["smtp_host"],
-        smtp_timeout=settings["smtp_timeout"],
-        sender_name=settings["sender_name"],
-        sender_email=settings["sender_email"],
-    )
-
-    scheduler_cls = BlockingScheduler if block else BackgroundScheduler
-    scheduler = scheduler_cls()
-
-    for job in jobs.values():
-        job['_handle'] = scheduler.add_job(
-           run_job, 'cron', [job], **job["cron_trigger"]
-        )
-
-    scheduler.start()
-
-if __name__ == "__main__":
-    start(block=True)
+scheduler.start()
