@@ -4,7 +4,7 @@ from functools import wraps
 from flask import Flask, Response, redirect, request, url_for
 from jinja2 import Environment, FileSystemLoader
 
-from config import secrets
+from config import secrets, settings
 import scheduler
 
 TEMPLATES = Environment(loader=FileSystemLoader('templates'))
@@ -105,4 +105,18 @@ def jobs_delete(job_id):
 def index():
     return jobs_new()
 
+def get_full_job_view_url(job_id, job_key):
+    with app.test_request_context():
+        return "{}{}".format(
+            settings['app_url'],
+            url_for(
+                "jobs_show",
+                job_id=job_id,
+                key=job_key,
+            )
+        )
+
+scheduler.init(
+    get_full_job_view_url_fn=get_full_job_view_url,
+)
 scheduler.start()

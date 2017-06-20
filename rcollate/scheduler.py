@@ -67,6 +67,10 @@ def run_job(job):
         ),
         target_email=job["target_email"],
         subreddit=job["subreddit"],
+        job_view_url=get_full_job_view_url(
+            job['_id'],
+            get_job_key(job['_id']),
+        )
     )
 
 def create_job(subreddit, target_email, cron_trigger):
@@ -125,6 +129,10 @@ def get_new_job_id():
 
         if random_id not in jobs:
             return random_id
+
+def init(get_full_job_view_url_fn):
+    global get_full_job_view_url
+    get_full_job_view_url = get_full_job_view_url_fn
 
 def start():
     global jobs
