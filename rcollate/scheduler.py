@@ -3,16 +3,14 @@ import json
 import praw
 import random
 import string
-import sys
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from mailer import Mailer
 
+from config import settings, secrets
 import logs
 import resources
 
-SETTINGS_FILE = "config/settings.json"
-SECRETS_FILE = "config/secrets.json"
 JOBS_FILE = "db/jobs.json"
 
 JOB_DEFAULTS = {
@@ -22,13 +20,9 @@ JOB_DEFAULTS = {
 
 JOB_ID_LENGTH = 12
 
-settings = None
-secrets = None
 jobs = None
-
 mailer = None
 scheduler = None
-
 logger = logs.get_logger()
 
 def read_jobs():
@@ -133,14 +127,10 @@ def get_new_job_id():
             return random_id
 
 def start():
-    global settings
-    global secrets
     global jobs
     global mailer
     global scheduler
 
-    settings = resources.read_json_file(SETTINGS_FILE)
-    secrets = resources.read_json_file(SECRETS_FILE)
     jobs = read_jobs()
     mailer = Mailer(
         smtp_host=settings["smtp_host"],

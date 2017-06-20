@@ -4,10 +4,8 @@ from functools import wraps
 from flask import Flask, Response, redirect, request, url_for
 from jinja2 import Environment, FileSystemLoader
 
-import resources
+from config import secrets
 import scheduler
-
-WEB_ADMIN_FILE = "config/web_admin.json"
 
 TEMPLATES = Environment(loader=FileSystemLoader('templates'))
 TEMPLATES.globals.update(get_job_key=scheduler.get_job_key)
@@ -18,12 +16,10 @@ JOBS_SHOW_TEMPLATE = TEMPLATES.get_template("jobs_show.html.j2")
 JOBS_EDIT_TEMPLATE = TEMPLATES.get_template("jobs_edit.html.j2")
 JOBS_NEW_TEMPLATE = TEMPLATES.get_template("jobs_new.html.j2")
 
-web_admin = resources.read_json_file(WEB_ADMIN_FILE)
-
 app = Flask(__name__)
 
 def check_auth(username, password):
-    return username == web_admin['username'] and password == web_admin['password']
+    return username == secrets['admin_username'] and password == secrets['admin_password']
 
 def authenticate():
     """Sends a 401 response that enables basic auth"""
