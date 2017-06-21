@@ -98,7 +98,7 @@ def jobs_delete(job_id):
 
     scheduler.delete_job(job_id)
 
-    return redirect(url_for("jobs_index"))
+    return redirect(url_for("jobs_new"))
 
 @app.route("/")
 def index():
