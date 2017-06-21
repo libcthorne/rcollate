@@ -1,4 +1,3 @@
-import hashlib
 import json
 import praw
 import random
@@ -18,7 +17,7 @@ JOB_DEFAULTS = {
     "time_filter": "day",
 }
 
-JOB_ID_LENGTH = 12
+JOB_ID_LENGTH = 20
 
 jobs = None
 mailer = None
@@ -67,10 +66,7 @@ def run_job(job):
         ),
         target_email=job["target_email"],
         subreddit=job["subreddit"],
-        job_view_url=get_full_job_view_url(
-            job['_id'],
-            get_job_key(job['_id']),
-        )
+        job_view_url=get_full_job_view_url(job['_id'])
     )
 
 def create_job(subreddit, target_email, cron_trigger):
@@ -105,12 +101,6 @@ def delete_job(job_id):
     del jobs[job_id]
 
     write_jobs()
-
-def get_job_key(job_id):
-    return hashlib.sha1(jobs[job_id]['target_email'].encode('utf-8')).hexdigest()
-
-def can_view_job(job_id, key):
-    return is_valid_job_id(job_id) and key == get_job_key(job_id)
 
 def is_valid_job_id(job_id):
     return job_id in jobs

@@ -8,7 +8,6 @@ from config import secrets, settings
 import scheduler
 
 TEMPLATES = Environment(loader=FileSystemLoader('templates'))
-TEMPLATES.globals.update(get_job_key=scheduler.get_job_key)
 
 INDEX_TEMPLATE = TEMPLATES.get_template("index.html.j2")
 JOBS_INDEX_TEMPLATE = TEMPLATES.get_template("jobs_index.html.j2")
@@ -44,14 +43,14 @@ def jobs_index():
 
 @app.route("/jobs/<string:job_id>/")
 def jobs_show(job_id):
-    if not scheduler.can_view_job(job_id, request.args.get('key')):
+    if not scheduler.is_valid_job_id(job_id):
         return "Job %s not found" % job_id
 
     return JOBS_SHOW_TEMPLATE.render(job=scheduler.get_job_by_id(job_id))
 
 @app.route("/jobs/<string:job_id>/", methods=['POST'])
 def jobs_update(job_id):
-    if not scheduler.can_view_job(job_id, request.args.get('key')):
+    if not scheduler.is_valid_job_id(job_id):
         return "Job %s not found" % job_id
 
     subreddit = request.form['subreddit']
@@ -65,11 +64,11 @@ def jobs_update(job_id):
         cron_trigger=cron_trigger
     )
 
-    return redirect(url_for('jobs_show', job_id=job_id, key=scheduler.get_job_key(job_id)))
+    return redirect(url_for('jobs_show', job_id=job_id))
 
 @app.route("/jobs/<string:job_id>/edit/")
 def jobs_edit(job_id):
-    if not scheduler.can_view_job(job_id, request.args.get('key')):
+    if not scheduler.is_valid_job_id(job_id):
         return "Job %s not found" % job_id
 
     return JOBS_EDIT_TEMPLATE.render(job=scheduler.get_job_by_id(job_id))
@@ -90,11 +89,11 @@ def jobs_create():
         cron_trigger=cron_trigger
     )
 
-    return redirect(url_for('jobs_show', job_id=job['_id'], key=scheduler.get_job_key(job['_id'])))
+    return redirect(url_for('jobs_show', job_id=job['_id']))
 
 @app.route("/jobs/<string:job_id>/delete/", methods=['POST'])
 def jobs_delete(job_id):
-    if not scheduler.can_view_job(job_id, request.args.get('key')):
+    if not scheduler.is_valid_job_id(job_id):
         return "Job %s not found" % job_id
 
     scheduler.delete_job(job_id)
@@ -105,14 +104,13 @@ def jobs_delete(job_id):
 def index():
     return jobs_new()
 
-def get_full_job_view_url(job_id, job_key):
+def get_full_job_view_url(job_id):
     with app.test_request_context():
         return "{}{}".format(
             settings['app_url'],
             url_for(
                 "jobs_show",
                 job_id=job_id,
-                key=job_key,
             )
         )
 
