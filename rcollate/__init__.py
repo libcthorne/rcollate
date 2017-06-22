@@ -1,0 +1,1 @@
+from .rcollate import app

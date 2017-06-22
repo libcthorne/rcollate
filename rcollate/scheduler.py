@@ -4,11 +4,10 @@ import random
 import string
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from mailer import Mailer
 
-from config import settings, secrets
-import logs
-import resources
+from rcollate import logs, resources
+from rcollate.config import settings, secrets
+from rcollate.mailer import Mailer
 
 JOBS_FILE = "db/jobs.json"
 
