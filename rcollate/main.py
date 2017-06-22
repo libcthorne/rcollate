@@ -9,11 +9,11 @@ import scheduler
 
 TEMPLATES = Environment(loader=FileSystemLoader('templates'))
 
-INDEX_TEMPLATE = TEMPLATES.get_template("index.html.j2")
-JOBS_INDEX_TEMPLATE = TEMPLATES.get_template("jobs_index.html.j2")
-JOBS_SHOW_TEMPLATE = TEMPLATES.get_template("jobs_show.html.j2")
-JOBS_EDIT_TEMPLATE = TEMPLATES.get_template("jobs_edit.html.j2")
-JOBS_NEW_TEMPLATE = TEMPLATES.get_template("jobs_new.html.j2")
+INDEX_TEMPLATE = TEMPLATES.get_template("index.html")
+JOBS_INDEX_TEMPLATE = TEMPLATES.get_template("jobs_index.html")
+JOBS_SHOW_TEMPLATE = TEMPLATES.get_template("jobs_show.html")
+JOBS_EDIT_TEMPLATE = TEMPLATES.get_template("jobs_edit.html")
+JOBS_NEW_TEMPLATE = TEMPLATES.get_template("jobs_new.html")
 
 app = Flask(__name__)
 
