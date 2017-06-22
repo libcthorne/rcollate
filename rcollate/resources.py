@@ -1,7 +1,7 @@
 import json
 import sys
 
-import logs
+from rcollate import logs
 
 logger = logs.get_logger()
 

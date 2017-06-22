@@ -1,4 +1,7 @@
 env
+*.pyc
+*.egg
+*.egg-info
 secrets.json
 jobs.json
 web_admin.json

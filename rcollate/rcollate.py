@@ -1,21 +1,13 @@
 import ast
 from functools import wraps
 
-from flask import Flask, Response, redirect, request, url_for
+from flask import Flask, Response, redirect, render_template, request, url_for
 from jinja2 import Environment, FileSystemLoader
 
-from config import secrets, settings
-import scheduler
+from rcollate import scheduler
+from rcollate.config import secrets, settings
 
-TEMPLATES = Environment(loader=FileSystemLoader('templates'))
-
-INDEX_TEMPLATE = TEMPLATES.get_template("index.html")
-JOBS_INDEX_TEMPLATE = TEMPLATES.get_template("jobs_index.html")
-JOBS_SHOW_TEMPLATE = TEMPLATES.get_template("jobs_show.html")
-JOBS_EDIT_TEMPLATE = TEMPLATES.get_template("jobs_edit.html")
-JOBS_NEW_TEMPLATE = TEMPLATES.get_template("jobs_new.html")
-
-app = Flask(__name__)
+app = Flask('rcollate')
 
 def check_auth(username, password):
     return username == secrets['admin_username'] and password == secrets['admin_password']
@@ -39,14 +31,14 @@ def requires_admin(f):
 @app.route("/jobs/")
 @requires_admin
 def jobs_index():
-    return JOBS_INDEX_TEMPLATE.render(jobs=scheduler.jobs)
+    return render_template('jobs_index.html', jobs=scheduler.jobs)
 
 @app.route("/jobs/<string:job_id>/")
 def jobs_show(job_id):
     if not scheduler.is_valid_job_id(job_id):
         return "Job %s not found" % job_id
 
-    return JOBS_SHOW_TEMPLATE.render(job=scheduler.get_job_by_id(job_id))
+    return render_template('jobs_show.html', job=scheduler.get_job_by_id(job_id))
 
 @app.route("/jobs/<string:job_id>/", methods=['POST'])
 def jobs_update(job_id):
@@ -71,11 +63,11 @@ def jobs_edit(job_id):
     if not scheduler.is_valid_job_id(job_id):
         return "Job %s not found" % job_id
 
-    return JOBS_EDIT_TEMPLATE.render(job=scheduler.get_job_by_id(job_id))
+    return render_template('jobs_edit.html', job=scheduler.get_job_by_id(job_id))
 
 @app.route("/jobs/new/")
 def jobs_new():
-    return JOBS_NEW_TEMPLATE.render()
+    return render_template('jobs_new.html')
 
 @app.route("/jobs/", methods=['POST'])
 def jobs_create():
