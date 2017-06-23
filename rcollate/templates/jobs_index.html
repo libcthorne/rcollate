@@ -1,5 +1,5 @@
 {% for job_id, job in jobs.items() %}
-  <a href="/jobs/{{ job_id }}/">Job [{{ job_id }}]: {{ job.subreddit }} / {{ job.target_email }} / {{ job.cron_trigger }}</a>
+  <a href="/jobs/{{ job_id }}/">Job [{{ job_id }}]: {{ job.subreddit }} / {{ job.target_email }}</a>
   <span>[</span>
   <a href="/jobs/{{ job_id }}/edit/">edit</a>
   <span>,</span>

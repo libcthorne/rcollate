@@ -7,6 +7,8 @@ from jinja2 import Environment, FileSystemLoader
 from rcollate import scheduler
 from rcollate.config import secrets, settings
 
+DEFAULT_CRON_TRIGGER = {"hour": 6}
+
 app = Flask('rcollate')
 
 def check_auth(username, password):
@@ -47,7 +49,7 @@ def jobs_update(job_id):
 
     subreddit = request.form['subreddit']
     target_email = request.form['target_email']
-    cron_trigger = ast.literal_eval(request.form['cron_trigger'])
+    cron_trigger = DEFAULT_CRON_TRIGGER
 
     scheduler.update_job(
         job_id=job_id,
@@ -73,7 +75,7 @@ def jobs_new():
 def jobs_create():
     subreddit = request.form['subreddit']
     target_email = request.form['target_email']
-    cron_trigger = ast.literal_eval(request.form['cron_trigger'])
+    cron_trigger = DEFAULT_CRON_TRIGGER
 
     job = scheduler.create_job(
         subreddit=subreddit,
