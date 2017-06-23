@@ -1,8 +1,10 @@
-<form action="/jobs/" method="post">
-  Subreddit: <input type="text" name="subreddit"/>
-  <br/>
-  Target email: <input type="text" name="target_email"/>
-  <br/>
-  <input type="submit" value="Create"/>
-</form>
-
+{% extends "layout.html" %}
+{% block body %}
+	<form action="/jobs/" method="post">
+		Subreddit: <input type="text" name="subreddit"/>
+		<br/>
+		Target email: <input type="text" name="target_email"/>
+		<br/>
+		<input type="submit" value="Create"/>
+	</form>
+{% endblock %}

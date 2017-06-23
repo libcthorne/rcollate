@@ -34,12 +34,14 @@ SECRETS_SCHEMA = {
         "client_secret": {"type": "string"},
         "admin_username": {"type": "string"},
         "admin_password": {"type": "string"},
+        "session_secret_key": {"type": "string"},
     },
     "required": [
         "client_id",
         "client_secret",
         "admin_username",
         "admin_password",
+        "session_secret_key",
     ],
     "additionalProperties": False,
 }

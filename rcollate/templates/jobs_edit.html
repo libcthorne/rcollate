@@ -1,7 +1,10 @@
-<form action="/jobs/{{ job._id }}/" method="post">
-  Subreddit: <input type="text" name="subreddit" value="{{ job.subreddit }}"/>
-  <br/>
-  Target email: <input type="text" name="target_email" value="{{ job.target_email }}"/>
-  <br/>
-  <input type="submit" value="Save"/>
-</form>
+{% extends "layout.html" %}
+{% block body %}
+	<form action="/jobs/{{ job._id }}/" method="post">
+		Subreddit: <input type="text" name="subreddit" value="{{ job.subreddit }}"/>
+		<br/>
+		Target email: <input type="text" name="target_email" value="{{ job.target_email }}"/>
+		<br/>
+		<input type="submit" value="Save"/>
+	</form>
+{% endblock %}
