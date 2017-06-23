@@ -41,6 +41,7 @@ SECRETS_SCHEMA = {
         "admin_username",
         "admin_password",
     ],
+    "additionalProperties": False,
 }
 
 def read_config_file(path, schema):
