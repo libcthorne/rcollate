@@ -1,11 +1,14 @@
-{{ job.subreddit }} / {{ job.target_email }}
-<span>[</span>
-<a href="/jobs/{{ job._id }}/edit/">edit</a>
-<span>]</span>
+{% extends "layout.html" %}
+{% block body %}
+	{{ job.subreddit }} / {{ job.target_email }}
+	<span>[</span>
+	<a href="/jobs/{{ job._id }}/edit/">edit</a>
+	<span>]</span>
 
-<br/><br/>
-<a href="/jobs/new/">New Job</a>
+	<br/><br/>
+	<a href="/jobs/new/">New Job</a>
 
-<form action="/jobs/{{ job._id }}/delete/" method="post">
-  <input type="submit" value="delete"/>
-</form>
+	<form action="/jobs/{{ job._id }}/delete/" method="post">
+		<input type="submit" value="delete"/>
+	</form>
+{% endblock %}

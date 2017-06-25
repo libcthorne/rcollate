@@ -1,15 +1,23 @@
 import ast
 from functools import wraps
+import re
 
-from flask import Flask, Response, redirect, render_template, request, url_for
+from flask import (
+    Flask, Response,
+    flash, redirect, render_template, request, url_for,
+)
 from jinja2 import Environment, FileSystemLoader
 
 from rcollate import scheduler
 from rcollate.config import secrets, settings
+import rcollate.reddit as reddit
 
 DEFAULT_CRON_TRIGGER = {"hour": 6}
 
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+
 app = Flask('rcollate')
+app.config['SECRET_KEY'] = secrets['session_secret_key']
 
 def check_auth(username, password):
     return username == secrets['admin_username'] and password == secrets['admin_password']
@@ -30,6 +38,19 @@ def requires_admin(f):
         return f(*args, **kwargs)
     return decorated
 
+def validate_job_fields(subreddit, target_email):
+    if subreddit is None or len(subreddit) == 0:
+        return "Subreddit is missing"
+
+    if target_email is None or len(target_email) == 0:
+        return "Email is missing"
+
+    if not reddit.subreddit_exists(subreddit):
+        return "Subreddit not found"
+
+    if not EMAIL_REGEX.match(target_email):
+        return "Email is invalid"
+
 @app.route("/jobs/")
 @requires_admin
 def jobs_index():
@@ -47,15 +68,19 @@ def jobs_update(job_id):
     if not scheduler.is_valid_job_id(job_id):
         return "Job %s not found" % job_id
 
-    subreddit = request.form['subreddit']
-    target_email = request.form['target_email']
-    cron_trigger = DEFAULT_CRON_TRIGGER
+    subreddit = request.form.get('subreddit')
+    target_email = request.form.get('target_email')
+
+    error = validate_job_fields(subreddit, target_email)
+    if error is not None:
+        flash(error)
+        return redirect(url_for('jobs_edit', job_id=job_id))
 
     scheduler.update_job(
         job_id=job_id,
         subreddit=subreddit,
         target_email=target_email,
-        cron_trigger=cron_trigger
+        cron_trigger=DEFAULT_CRON_TRIGGER,
     )
 
     return redirect(url_for('jobs_show', job_id=job_id))
@@ -73,14 +98,18 @@ def jobs_new():
 
 @app.route("/jobs/", methods=['POST'])
 def jobs_create():
-    subreddit = request.form['subreddit']
-    target_email = request.form['target_email']
-    cron_trigger = DEFAULT_CRON_TRIGGER
+    subreddit = request.form.get('subreddit')
+    target_email = request.form.get('target_email')
+
+    error = validate_job_fields(subreddit, target_email)
+    if error is not None:
+        flash(error)
+        return redirect(url_for('jobs_new'))
 
     job = scheduler.create_job(
         subreddit=subreddit,
         target_email=target_email,
-        cron_trigger=cron_trigger
+        cron_trigger=DEFAULT_CRON_TRIGGER,
     )
 
     return redirect(url_for('jobs_show', job_id=job['_id']))

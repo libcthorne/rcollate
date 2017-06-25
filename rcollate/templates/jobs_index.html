@@ -1,11 +1,14 @@
-{% for job_id, job in jobs.items() %}
-  <a href="/jobs/{{ job_id }}/">Job [{{ job_id }}]: {{ job.subreddit }} / {{ job.target_email }}</a>
-  <span>[</span>
-  <a href="/jobs/{{ job_id }}/edit/">edit</a>
-  <span>,</span>
-  <form action="/jobs/{{ job_id }}/delete/" method="post">
-    <input type="submit" value="delete"/>
-  </form>
-  <span>]</span>
-  <br/>
-{% endfor %}
+{% extends "layout.html" %}
+{% block body %}
+	{% for job_id, job in jobs.items() %}
+		<a href="/jobs/{{ job_id }}/">Job [{{ job_id }}]: {{ job.subreddit }} / {{ job.target_email }}</a>
+		<span>[</span>
+		<a href="/jobs/{{ job_id }}/edit/">edit</a>
+		<span>,</span>
+		<form action="/jobs/{{ job_id }}/delete/" method="post">
+			<input type="submit" value="delete"/>
+		</form>
+		<span>]</span>
+		<br/>
+	{% endfor %}
+{% endblock %}

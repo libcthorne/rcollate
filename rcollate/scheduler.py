@@ -8,6 +8,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from rcollate import logs, resources
 from rcollate.config import settings, secrets
 from rcollate.mailer import Mailer
+import rcollate.reddit as reddit
 
 JOBS_FILE = "db/jobs.json"
 
@@ -50,18 +51,11 @@ def write_jobs():
         logger.error("Failed to save jobs to %s", JOBS_FILE)
 
 def run_job(job):
-    reddit = praw.Reddit(
-        client_id=secrets["client_id"],
-        client_secret=secrets["client_secret"],
-        user_agent=settings["user_agent"]
-    )
-
-    subreddit = reddit.subreddit(job["subreddit"])
-
     mailer.send_threads(
-        r_threads=subreddit.top(
+        r_threads=reddit.top_subreddit_threads(
+            job["subreddit"],
             job["time_filter"],
-            limit=job["thread_limit"]
+            job["thread_limit"],
         ),
         target_email=job["target_email"],
         subreddit=job["subreddit"],
