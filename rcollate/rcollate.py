@@ -1,5 +1,6 @@
 import ast
 from functools import wraps
+import re
 
 from flask import (
     Flask, Response,
@@ -9,8 +10,11 @@ from jinja2 import Environment, FileSystemLoader
 
 from rcollate import scheduler
 from rcollate.config import secrets, settings
+import rcollate.reddit as reddit
 
 DEFAULT_CRON_TRIGGER = {"hour": 6}
+
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
 app = Flask('rcollate')
 app.config['SECRET_KEY'] = secrets['session_secret_key']
@@ -36,10 +40,16 @@ def requires_admin(f):
 
 def validate_job_fields(subreddit, target_email):
     if subreddit is None or len(subreddit) == 0:
-        return "Subreddit is required"
+        return "Subreddit is missing"
 
     if target_email is None or len(target_email) == 0:
-        return "Email is required"
+        return "Email is missing"
+
+    if not reddit.subreddit_exists(subreddit):
+        return "Subreddit not found"
+
+    if not EMAIL_REGEX.match(target_email):
+        return "Email is invalid"
 
 @app.route("/jobs/")
 @requires_admin
