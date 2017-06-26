@@ -6,6 +6,7 @@ from flask import (
     Flask, Response,
     flash, redirect, render_template, request, url_for,
 )
+from flask_socketio import SocketIO, emit
 from jinja2 import Environment, FileSystemLoader
 
 from rcollate import scheduler
@@ -18,6 +19,8 @@ EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
 app = Flask('rcollate')
 app.config['SECRET_KEY'] = secrets['session_secret_key']
+
+socketio = SocketIO(app)
 
 def check_auth(username, password):
     return username == secrets['admin_username'] and password == secrets['admin_password']
@@ -126,6 +129,22 @@ def jobs_delete(job_id):
 @app.route("/")
 def index():
     return jobs_new()
+
+@socketio.on('subreddit_search_request')
+def subreddit_search(message):
+    request_time = message['request_time']
+    subreddit = message['subreddit']
+
+    matches = sorted([
+        r.display_name
+        for r in reddit.subreddit_search(subreddit)
+    ], key=len)
+
+    emit('subreddit_search_response', {
+        'request_time': request_time,
+        'subreddit': subreddit,
+        'matches': matches,
+    })
 
 def get_full_job_view_url(job_id):
     with app.test_request_context():
