@@ -1,7 +1,14 @@
 {% extends "layout.html" %}
+{% block head %}
+		<script type="text/javascript" src="{{ url_for('static', filename='jquery-3.2.1.js') }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='socket.io-2.0.3.js') }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='subreddit-search.js') }}"></script>
+{% endblock %}
 {% block body %}
 	<form action="/jobs/" method="post">
 		Subreddit: <input type="text" name="subreddit"/>
+		<br/>
+		<span id="subreddit_matches"></span>
 		<br/>
 		Target email: <input type="text" name="target_email"/>
 		<br/>
