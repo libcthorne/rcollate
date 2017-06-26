@@ -1,10 +1,15 @@
 <!doctype html>
-<title>rcollate</title>
-{% with messages = get_flashed_messages() %}
-	{% if messages %}
-		{% for message in messages %}
-			<p>{{ message }}</p>
-		{% endfor %}
-			{% endif %}
-{% endwith %}
-{% block body %}{% endblock %}
+<head>
+	<title>rcollate</title>
+	{% block head %}{% endblock %}
+</head>
+<body>
+	{% with messages = get_flashed_messages() %}
+		{% if messages %}
+			{% for message in messages %}
+				<p>{{ message }}</p>
+			{% endfor %}
+		{% endif %}
+	{% endwith %}
+	{% block body %}{% endblock %}
+</body>
