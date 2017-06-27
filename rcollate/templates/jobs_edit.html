@@ -1,4 +1,11 @@
 {% extends "layout.html" %}
+{% block head %}
+		<script type="text/javascript" src="{{ url_for('static', filename='jquery-3.2.1.js') }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='jquery-ui-1.12.1.js') }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='socket.io-2.0.3.js') }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='subreddit-search.js') }}"></script>
+		<link href="{{ url_for('static', filename='jquery-ui-1.12.1.css') }}" rel="stylesheet"/>
+{% endblock %}
 {% block body %}
 	<form action="/jobs/{{ job._id }}/" method="post">
 		Subreddit: <input type="text" name="subreddit" value="{{ job.subreddit }}"/>

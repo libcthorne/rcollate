@@ -23,3 +23,6 @@ def subreddit_exists(subreddit):
         return len(r) > 0
     except NotFound:
         return False
+
+def subreddit_search(subreddit):
+    return _reddit.subreddits.search_by_name(subreddit)
