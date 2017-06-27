@@ -1,1 +1,2 @@
 graft rcollate/templates
+graft rcollate/static
