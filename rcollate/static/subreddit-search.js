@@ -16,13 +16,12 @@ function sendSubredditSearchRequest(socket, subreddit) {
   lastSearchRequestSubreddit = subreddit;
 
   socket.emit('subreddit_search_request', {
-    request_time: now,
     subreddit: subreddit
   });
 }
 
 function receiveSubredditSearchResponse(msg) {
-  if (msg.request_time != lastSearchRequestTime)
+  if (msg.subreddit != $subredditInput.val())
     return;
 
   $('#subreddit_matches').html(msg.matches.join("<br/>"));

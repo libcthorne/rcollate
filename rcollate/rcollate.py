@@ -132,7 +132,6 @@ def index():
 
 @socketio.on('subreddit_search_request')
 def subreddit_search(message):
-    request_time = message['request_time']
     subreddit = message['subreddit']
 
     matches = sorted([
@@ -141,7 +140,6 @@ def subreddit_search(message):
     ], key=len)
 
     emit('subreddit_search_response', {
-        'request_time': request_time,
         'subreddit': subreddit,
         'matches': matches,
     })
