@@ -3,6 +3,8 @@ SEARCH_REQUEST_INTERVAL = 500;
 lastSearchRequestTime = 0;
 lastSearchRequestSubreddit = "";
 
+$subredditInput = null;
+
 function sendSubredditSearchRequest(socket, subreddit) {
   now = (new Date()).getTime();
 
@@ -16,16 +18,21 @@ function sendSubredditSearchRequest(socket, subreddit) {
   lastSearchRequestSubreddit = subreddit;
 
   socket.emit('subreddit_search_request', {
-    request_time: now,
     subreddit: subreddit
   });
 }
 
 function receiveSubredditSearchResponse(msg) {
-  if (msg.request_time != lastSearchRequestTime)
+  if (msg.subreddit != $subredditInput.val())
     return;
 
-  $('#subreddit_matches').html(msg.matches.join("<br/>"));
+  // update suggestions
+  $subredditInput.autocomplete("option", {
+    source: msg.matches
+  });
+
+  // show new suggestions
+  $subredditInput.autocomplete("search");
 }
 
 $(document).ready(function() {
@@ -34,6 +41,31 @@ $(document).ready(function() {
   socket.on('subreddit_search_response', receiveSubredditSearchResponse);
 
   $subredditInput = $('input[name="subreddit"]');
+  $subredditInput.autocomplete({
+    source: [],
+    autoFocus: true, // allow enter to select first option
+    focus: function(event, ui) {
+      // prevent suggestions being refreshed while toggling through suggestions
+      lastSearchRequestSubreddit = ui.item.value;
+    },
+    select: function(event, ui) {
+      // prevent suggestions for selected value
+      lastSearchRequestSubreddit = ui.item.value;
+      $subredditInput.autocomplete("option", { source: [] });
+    }
+  });
+  $subredditInput.on({
+    keypress: function(event) {
+      var code = (event.keyCode ? event.keyCode : event.which);
+      if (code == 37 || code == 39) {
+        // hide and prevent suggestions after selecting with left/right keys
+        lastSearchRequestSubreddit = $subredditInput.val();
+        $subredditInput.autocomplete("option", { source: [] });
+        $subredditInput.autocomplete("close");
+      }
+    }
+  });
+
   lastSearchRequestSubreddit = $subredditInput.val();
 
   setInterval(function() {
