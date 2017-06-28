@@ -1,7 +1,9 @@
 import json
+from pathlib import Path
 import praw
 import random
 import string
+import sqlite3
 
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -10,7 +12,8 @@ from rcollate.config import settings, secrets
 from rcollate.mailer import Mailer
 import rcollate.reddit as reddit
 
-JOBS_FILE = "db/jobs.json"
+JOBS_DB_FILE = "db/jobs.db"
+JOBS_DB_SCHEMA = "db/jobs_schema.sql"
 
 JOB_DEFAULTS = {
     "thread_limit": 10,
@@ -24,31 +27,114 @@ mailer = None
 scheduler = None
 logger = logs.get_logger()
 
-def read_jobs():
-    serialized_jobs = resources.read_json_file(JOBS_FILE, required=False, default=[])
+def db_init():
+    if Path(JOBS_DB_FILE).is_file():
+        logger.info("DB already initialized")
+        return
+
+    logger.info("Initializing DB")
+
+    with open(JOBS_DB_SCHEMA) as f:
+        conn = sqlite3.connect(JOBS_DB_FILE)
+        with conn:
+            conn.executescript(f.read())
+        conn.close()
+
+def db_read_jobs():
+    rows = []
+    conn = sqlite3.connect(JOBS_DB_FILE)
+    conn.row_factory = sqlite3.Row
+    with conn:
+        c = conn.execute("SELECT * FROM jobs")
+        rows = c.fetchall()
+    conn.close()
+
     jobs = {}
 
-    for job_id, job in serialized_jobs.items():
-        job['_id'] = job_id
-        jobs[job_id] = job
+    for row in rows:
+        job_key = row['job_key']
+        job = {
+            '_id': job_key,
+            'thread_limit': row['thread_limit'],
+            'target_email': row['target_email'],
+            'time_filter': row['time_filter'],
+            'cron_trigger': json.loads(row['cron_trigger']),
+            'subreddit': row['subreddit'],
+        }
+        jobs[job_key] = job
 
     return jobs
 
-def write_jobs():
-    try:
-        serialized_jobs = {
-            job_id: {
-                k: job[k]
-                for k in job
-                if k[0] != '_'
-            }
-            for job_id, job in jobs.items()
-        }
+def db_insert_job(job):
+    conn = sqlite3.connect(JOBS_DB_FILE)
+    with conn:
+        conn.execute(
+            """
+            INSERT INTO jobs (
+                job_key,
+                thread_limit,
+                target_email,
+                time_filter,
+                cron_trigger,
+                subreddit
+            ) VALUES (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?
+            )
+            """,
+            (
+                job['_id'],
+                job['thread_limit'],
+                job['target_email'],
+                job['time_filter'],
+                json.dumps(job['cron_trigger']),
+                job['subreddit']
+            )
+        )
+    conn.close()
 
-        with open(JOBS_FILE, 'w') as f:
-            json.dump(serialized_jobs, f, indent=4)
-    except IOError:
-        logger.error("Failed to save jobs to %s", JOBS_FILE)
+def db_update_job(job):
+    conn = sqlite3.connect(JOBS_DB_FILE)
+    with conn:
+        conn.execute(
+            """
+            UPDATE jobs
+            SET
+                job_key = ?,
+                thread_limit = ?,
+                target_email = ?,
+                time_filter = ?,
+                cron_trigger = ?,
+                subreddit = ?
+            WHERE
+                job_key = ?
+            """,
+            (
+                job['_id'],
+                job['thread_limit'],
+                job['target_email'],
+                job['time_filter'],
+                json.dumps(job['cron_trigger']),
+                job['subreddit'],
+                job['_id'],
+            )
+        )
+    conn.close()
+
+def db_delete_job(job):
+    conn = sqlite3.connect(JOBS_DB_FILE)
+    with conn:
+        conn.execute(
+            "DELETE FROM jobs WHERE job_key = ?",
+            (
+                job['_id'],
+            )
+        )
+    conn.close()
 
 def run_job(job):
     mailer.send_threads(
@@ -75,7 +161,7 @@ def create_job(subreddit, target_email, cron_trigger):
     job['_id'] = job_id
     jobs[job_id] = job
 
-    write_jobs()
+    db_insert_job(job)
 
     return job
 
@@ -86,14 +172,14 @@ def update_job(job_id, subreddit, target_email, cron_trigger):
     job['cron_trigger'] = cron_trigger
     job['_handle'].reschedule('cron', **cron_trigger)
 
-    write_jobs()
+    db_update_job(job)
 
 def delete_job(job_id):
     job = jobs[job_id]
     job['_handle'].remove()
     del jobs[job_id]
 
-    write_jobs()
+    db_delete_job(job)
 
 def is_valid_job_id(job_id):
     return job_id in jobs
@@ -117,12 +203,14 @@ def init(get_full_job_view_url_fn):
     global get_full_job_view_url
     get_full_job_view_url = get_full_job_view_url_fn
 
+    db_init()
+
 def start():
     global jobs
     global mailer
     global scheduler
 
-    jobs = read_jobs()
+    jobs = db_read_jobs()
     mailer = Mailer(
         smtp_host=settings["smtp_host"],
         smtp_timeout=settings["smtp_timeout"],

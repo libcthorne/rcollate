@@ -3,7 +3,7 @@ env
 *.egg
 *.egg-info
 secrets.json
-jobs.json
+jobs.db
 web_admin.json
 rcollate.log
 __pycache__
