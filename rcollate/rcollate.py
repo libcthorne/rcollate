@@ -11,9 +11,15 @@ from jinja2 import Environment, FileSystemLoader
 
 from rcollate import scheduler
 from rcollate.config import secrets, settings
+import rcollate.db as db
 import rcollate.reddit as reddit
 
 DEFAULT_CRON_TRIGGER = {"hour": 6}
+
+JOB_DEFAULTS = {
+    "thread_limit": 10,
+    "time_filter": "day",
+}
 
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 
@@ -54,22 +60,46 @@ def validate_job_fields(subreddit, target_email):
     if not EMAIL_REGEX.match(target_email):
         return "Email is invalid"
 
+def create_job(subreddit, target_email, cron_trigger):
+    data = JOB_DEFAULTS.copy()
+    data['subreddit'] = subreddit
+    data['target_email'] = target_email
+    data['cron_trigger'] = cron_trigger
+
+    job = db.insert_job(data)
+    scheduler.schedule_job(job['job_key'])
+
+    return job
+
+def update_job(job_key, subreddit, target_email, cron_trigger):
+    data = db.get_job(job_key)
+    data['subreddit'] = subreddit
+    data['target_email'] = target_email
+    data['cron_trigger'] = cron_trigger
+
+    db.update_job(job_key, data)
+    scheduler.reschedule_job(job_key)
+
+def delete_job(job_key):
+    scheduler.unschedule_job(job_key)
+    db.delete_job(job_key)
+
 @app.route("/jobs/")
 @requires_admin
 def jobs_index():
-    return render_template('jobs_index.html', jobs=scheduler.jobs)
+    return render_template('jobs_index.html', jobs=db.get_jobs())
 
-@app.route("/jobs/<string:job_id>/")
-def jobs_show(job_id):
-    if not scheduler.is_valid_job_id(job_id):
-        return "Job %s not found" % job_id
+@app.route("/jobs/<string:job_key>/")
+def jobs_show(job_key):
+    if not db.is_valid_job_key(job_key):
+        return "Job %s not found" % job_key
 
-    return render_template('jobs_show.html', job=scheduler.get_job_by_id(job_id))
+    return render_template('jobs_show.html', job=db.get_job(job_key))
 
-@app.route("/jobs/<string:job_id>/", methods=['POST'])
-def jobs_update(job_id):
-    if not scheduler.is_valid_job_id(job_id):
-        return "Job %s not found" % job_id
+@app.route("/jobs/<string:job_key>/", methods=['POST'])
+def jobs_update(job_key):
+    if not db.is_valid_job_key(job_key):
+        return "Job %s not found" % job_key
 
     subreddit = request.form.get('subreddit')
     target_email = request.form.get('target_email')
@@ -77,23 +107,23 @@ def jobs_update(job_id):
     error = validate_job_fields(subreddit, target_email)
     if error is not None:
         flash(error)
-        return redirect(url_for('jobs_edit', job_id=job_id))
+        return redirect(url_for('jobs_edit', job_key=job_key))
 
-    scheduler.update_job(
-        job_id=job_id,
+    update_job(
+        job_key=job_key,
         subreddit=subreddit,
         target_email=target_email,
         cron_trigger=DEFAULT_CRON_TRIGGER,
     )
 
-    return redirect(url_for('jobs_show', job_id=job_id))
+    return redirect(url_for('jobs_show', job_key=job_key))
 
-@app.route("/jobs/<string:job_id>/edit/")
-def jobs_edit(job_id):
-    if not scheduler.is_valid_job_id(job_id):
-        return "Job %s not found" % job_id
+@app.route("/jobs/<string:job_key>/edit/")
+def jobs_edit(job_key):
+    if not db.is_valid_job_key(job_key):
+        return "Job %s not found" % job_key
 
-    return render_template('jobs_edit.html', job=scheduler.get_job_by_id(job_id))
+    return render_template('jobs_edit.html', job=db.get_job(job_key))
 
 @app.route("/jobs/new/")
 def jobs_new():
@@ -109,20 +139,20 @@ def jobs_create():
         flash(error)
         return redirect(url_for('jobs_new'))
 
-    job = scheduler.create_job(
+    job = create_job(
         subreddit=subreddit,
         target_email=target_email,
         cron_trigger=DEFAULT_CRON_TRIGGER,
     )
 
-    return redirect(url_for('jobs_show', job_id=job['_id']))
+    return redirect(url_for('jobs_show', job_key=job['job_key']))
 
-@app.route("/jobs/<string:job_id>/delete/", methods=['POST'])
-def jobs_delete(job_id):
-    if not scheduler.is_valid_job_id(job_id):
-        return "Job %s not found" % job_id
+@app.route("/jobs/<string:job_key>/delete/", methods=['POST'])
+def jobs_delete(job_key):
+    if not db.is_valid_job_key(job_key):
+        return "Job %s not found" % job_key
 
-    scheduler.delete_job(job_id)
+    delete_job(job_key)
 
     return redirect(url_for("jobs_new"))
 
@@ -144,13 +174,13 @@ def subreddit_search(message):
         'matches': matches,
     })
 
-def get_full_job_view_url(job_id):
+def get_full_job_view_url(job_key):
     with app.test_request_context():
         return "{}{}".format(
             settings['app_url'],
             url_for(
                 "jobs_show",
-                job_id=job_id,
+                job_key=job_key,
             )
         )
 

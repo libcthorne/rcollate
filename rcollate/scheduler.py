@@ -1,56 +1,20 @@
-import json
-import praw
-import random
-import string
-
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from rcollate import logs, resources
-from rcollate.config import settings, secrets
+from rcollate import logs
+from rcollate.config import settings
 from rcollate.mailer import Mailer
+import rcollate.db as db
 import rcollate.reddit as reddit
 
-JOBS_FILE = "db/jobs.json"
-
-JOB_DEFAULTS = {
-    "thread_limit": 10,
-    "time_filter": "day",
-}
-
-JOB_ID_LENGTH = 20
-
-jobs = None
 mailer = None
 scheduler = None
+job_schedules = None
+
 logger = logs.get_logger()
 
-def read_jobs():
-    serialized_jobs = resources.read_json_file(JOBS_FILE, required=False, default=[])
-    jobs = {}
+def run_job(job_key):
+    job = db.get_job(job_key)
 
-    for job_id, job in serialized_jobs.items():
-        job['_id'] = job_id
-        jobs[job_id] = job
-
-    return jobs
-
-def write_jobs():
-    try:
-        serialized_jobs = {
-            job_id: {
-                k: job[k]
-                for k in job
-                if k[0] != '_'
-            }
-            for job_id, job in jobs.items()
-        }
-
-        with open(JOBS_FILE, 'w') as f:
-            json.dump(serialized_jobs, f, indent=4)
-    except IOError:
-        logger.error("Failed to save jobs to %s", JOBS_FILE)
-
-def run_job(job):
     mailer.send_threads(
         r_threads=reddit.top_subreddit_threads(
             job["subreddit"],
@@ -59,81 +23,52 @@ def run_job(job):
         ),
         target_email=job["target_email"],
         subreddit=job["subreddit"],
-        job_view_url=get_full_job_view_url(job['_id'])
+        job_view_url=get_full_job_view_url(job['job_key'])
     )
 
-def create_job(subreddit, target_email, cron_trigger):
-    job = JOB_DEFAULTS.copy()
-    job['subreddit'] = subreddit
-    job['target_email'] = target_email
-    job['cron_trigger'] = cron_trigger
-    job['_handle'] = scheduler.add_job(
-       run_job, 'cron', [job], **job["cron_trigger"]
-    )
-
-    job_id = get_new_job_id()
-    job['_id'] = job_id
-    jobs[job_id] = job
-
-    write_jobs()
-
-    return job
-
-def update_job(job_id, subreddit, target_email, cron_trigger):
-    job = get_job_by_id(job_id)
-    job['subreddit'] = subreddit
-    job['target_email'] = target_email
-    job['cron_trigger'] = cron_trigger
-    job['_handle'].reschedule('cron', **cron_trigger)
-
-    write_jobs()
-
-def delete_job(job_id):
-    job = jobs[job_id]
-    job['_handle'].remove()
-    del jobs[job_id]
-
-    write_jobs()
-
-def is_valid_job_id(job_id):
-    return job_id in jobs
-
-def get_job_by_id(job_id):
-    return jobs[job_id]
-
-def get_new_job_id():
-    while True:
-        random_id = ''.join(
-            random.SystemRandom().choice(
-                string.ascii_lowercase + string.ascii_uppercase + string.digits
-            )
-            for _ in range(JOB_ID_LENGTH)
+def schedule_job(job_key):
+    job = db.get_job(job_key)
+    job_schedules[job_key] = {
+        '_handle': scheduler.add_job(
+           run_job, 'cron', [job_key], **job["cron_trigger"]
         )
+    }
 
-        if random_id not in jobs:
-            return random_id
+def unschedule_job(job_key):
+    job_schedule = job_schedules[job_key]
+    job_schedule['_handle'].remove()
+    del job_schedules[job_key]
+
+def reschedule_job(job_key):
+    job = db.get_job(job_key)
+    job_schedule = job_schedules[job_key]
+    job_schedule['_handle'].reschedule('cron', **job['cron_trigger'])
 
 def init(get_full_job_view_url_fn):
     global get_full_job_view_url
     get_full_job_view_url = get_full_job_view_url_fn
 
 def start():
-    global jobs
     global mailer
     global scheduler
+    global job_schedules
 
-    jobs = read_jobs()
     mailer = Mailer(
         smtp_host=settings["smtp_host"],
         smtp_timeout=settings["smtp_timeout"],
         sender_name=settings["sender_name"],
         sender_email=settings["sender_email"],
     )
+
     scheduler = BackgroundScheduler()
 
-    for job in jobs.values():
-        job['_handle'] = scheduler.add_job(
-           run_job, 'cron', [job], **job["cron_trigger"]
-        )
+    job_schedules = {
+        job_key: {
+            '_handle': scheduler.add_job(
+               run_job, 'cron', [job_key], **job['cron_trigger']
+            )
+        }
+        for job_key, job in db.get_jobs().items()
+    }
 
     scheduler.start()
