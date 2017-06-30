@@ -149,8 +149,21 @@ def delete_job(job_key):
     conn.close()
 
 def is_valid_job_key(job_key):
-    # TODO: replace with EXISTS query
-    return get_job(job_key) is not None
+    conn = sqlite3.connect(JOBS_DB_FILE)
+    conn.row_factory = sqlite3.Row
+    with conn:
+        c = conn.execute(
+            """
+            SELECT rowid FROM jobs WHERE job_key = ?
+            """,
+            (
+                job_key,
+            )
+        )
+        row = c.fetchone()
+    conn.close()
+
+    return row is not None
 
 def get_new_job_key():
     while True:
