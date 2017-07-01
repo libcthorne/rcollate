@@ -4,8 +4,8 @@ import random
 import string
 import sqlite3
 
-JOBS_DB_FILE = "db/jobs.db"
-JOBS_DB_SCHEMA = "db/jobs_schema.sql"
+JOBS_DB_FILE = 'db/jobs.db'
+JOBS_DB_SCHEMA = 'db/jobs_schema.sql'
 JOB_KEY_LENGTH = 20
 
 def init():
@@ -26,10 +26,10 @@ def get_job(job_key):
     conn.row_factory = sqlite3.Row
     with conn:
         c = conn.execute(
-            """
+            '''
             SELECT * FROM jobs
             WHERE job_key = ?
-            """,
+            ''',
             (
                 job_key,
             )
@@ -52,7 +52,7 @@ def get_jobs():
     conn = sqlite3.connect(JOBS_DB_FILE)
     conn.row_factory = sqlite3.Row
     with conn:
-        c = conn.execute("SELECT * FROM jobs")
+        c = conn.execute('SELECT * FROM jobs')
         rows = c.fetchall()
     conn.close()
 
@@ -79,7 +79,7 @@ def insert_job(data):
     conn = sqlite3.connect(JOBS_DB_FILE)
     with conn:
         conn.execute(
-            """
+            '''
             INSERT INTO jobs (
                 job_key,
                 thread_limit,
@@ -95,7 +95,7 @@ def insert_job(data):
                 ?,
                 ?
             )
-            """,
+            ''',
             (
                 job_key,
                 data['thread_limit'],
@@ -113,7 +113,7 @@ def update_job(job_key, data):
     conn = sqlite3.connect(JOBS_DB_FILE)
     with conn:
         conn.execute(
-            """
+            '''
             UPDATE jobs
             SET
                 thread_limit = ?,
@@ -123,7 +123,7 @@ def update_job(job_key, data):
                 subreddit = ?
             WHERE
                 job_key = ?
-            """,
+            ''',
             (
                 data['thread_limit'],
                 data['target_email'],
@@ -141,7 +141,7 @@ def delete_job(job_key):
     conn = sqlite3.connect(JOBS_DB_FILE)
     with conn:
         conn.execute(
-            "DELETE FROM jobs WHERE job_key = ?",
+            'DELETE FROM jobs WHERE job_key = ?',
             (
                 job_key,
             )
@@ -153,9 +153,9 @@ def is_valid_job_key(job_key):
     conn.row_factory = sqlite3.Row
     with conn:
         c = conn.execute(
-            """
+            '''
             SELECT rowid FROM jobs WHERE job_key = ?
-            """,
+            ''',
             (
                 job_key,
             )

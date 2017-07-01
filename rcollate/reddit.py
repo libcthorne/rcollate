@@ -4,9 +4,9 @@ from prawcore import NotFound
 from rcollate.config import secrets, settings
 
 _reddit = praw.Reddit(
-    client_id=secrets["client_id"],
-    client_secret=secrets["client_secret"],
-    user_agent=settings["user_agent"]
+    client_id=secrets['client_id'],
+    client_secret=secrets['client_secret'],
+    user_agent=settings['user_agent']
 )
 
 def top_subreddit_threads(subreddit, time_filter, thread_limit):

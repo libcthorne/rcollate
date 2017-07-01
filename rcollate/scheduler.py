@@ -17,12 +17,12 @@ def run_job(job_key):
 
     mailer.send_threads(
         r_threads=reddit.top_subreddit_threads(
-            job["subreddit"],
-            job["time_filter"],
-            job["thread_limit"],
+            job['subreddit'],
+            job['time_filter'],
+            job['thread_limit'],
         ),
-        target_email=job["target_email"],
-        subreddit=job["subreddit"],
+        target_email=job['target_email'],
+        subreddit=job['subreddit'],
         job_view_url=get_full_job_view_url(job['job_key'])
     )
 
@@ -30,7 +30,7 @@ def schedule_job(job_key):
     job = db.get_job(job_key)
     job_schedules[job_key] = {
         '_handle': scheduler.add_job(
-           run_job, 'cron', [job_key], **job["cron_trigger"]
+           run_job, 'cron', [job_key], **job['cron_trigger']
         )
     }
 
@@ -54,10 +54,10 @@ def start():
     global job_schedules
 
     mailer = Mailer(
-        smtp_host=settings["smtp_host"],
-        smtp_timeout=settings["smtp_timeout"],
-        sender_name=settings["sender_name"],
-        sender_email=settings["sender_email"],
+        smtp_host=settings['smtp_host'],
+        smtp_timeout=settings['smtp_timeout'],
+        sender_name=settings['sender_name'],
+        sender_email=settings['sender_email'],
     )
 
     scheduler = BackgroundScheduler()
