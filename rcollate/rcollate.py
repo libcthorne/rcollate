@@ -189,6 +189,7 @@ def _get_job_by_job_key(job_key):
     db_conn = db.open_conn()
     job = db.get_job(db_conn, job_key)
     db.close_conn(db_conn)
+    return job
 
 def _get_job_url_by_job_key(job_key):
     with app.test_request_context():
