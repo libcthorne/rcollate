@@ -201,6 +201,8 @@ def _get_job_url_by_job_key(job_key):
             )
         )
 
+db.init()
+
 db_conn = db.open_conn()
 scheduler.start(
     initial_jobs=db.get_jobs(db_conn).values(),
