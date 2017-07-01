@@ -8,6 +8,14 @@ JOBS_DB_FILE = 'db/jobs.db'
 JOBS_DB_SCHEMA = 'db/jobs_schema.sql'
 JOB_KEY_LENGTH = 20
 
+def open_conn():
+    db_conn = sqlite3.connect(JOBS_DB_FILE)
+    db_conn.row_factory = sqlite3.Row
+    return db_conn
+
+def close_conn(db_conn):
+    db_conn.close()
+
 def init():
     if Path(JOBS_DB_FILE).is_file():
         logger.info("DB already initialized")
@@ -16,16 +24,14 @@ def init():
     logger.info("Initializing DB")
 
     with open(JOBS_DB_SCHEMA) as f:
-        conn = sqlite3.connect(JOBS_DB_FILE)
-        with conn:
-            conn.executescript(f.read())
-        conn.close()
+        db_conn = open_conn()
+        with db_conn:
+            db_conn.executescript(f.read())
+        close_conn(db_conn)
 
-def get_job(job_key):
-    conn = sqlite3.connect(JOBS_DB_FILE)
-    conn.row_factory = sqlite3.Row
-    with conn:
-        c = conn.execute(
+def get_job(db_conn, job_key):
+    with db_conn:
+        c = db_conn.execute(
             '''
             SELECT * FROM jobs
             WHERE job_key = ?
@@ -35,7 +41,6 @@ def get_job(job_key):
             )
         )
         row = c.fetchone()
-    conn.close()
 
     if row:
         return {
@@ -47,14 +52,11 @@ def get_job(job_key):
             'subreddit': row['subreddit'],
         }
 
-def get_jobs():
+def get_jobs(db_conn):
     rows = []
-    conn = sqlite3.connect(JOBS_DB_FILE)
-    conn.row_factory = sqlite3.Row
-    with conn:
-        c = conn.execute('SELECT * FROM jobs')
+    with db_conn:
+        c = db_conn.execute('SELECT * FROM jobs')
         rows = c.fetchall()
-    conn.close()
 
     jobs = {}
 
@@ -72,13 +74,11 @@ def get_jobs():
 
     return jobs
 
-def insert_job(data):
-    print("Getting key")
-    job_key = get_new_job_key()
-    print("Got key")
-    conn = sqlite3.connect(JOBS_DB_FILE)
-    with conn:
-        conn.execute(
+def insert_job(db_conn, data):
+    job_key = get_new_job_key(db_conn)
+
+    with db_conn:
+        db_conn.execute(
             '''
             INSERT INTO jobs (
                 job_key,
@@ -105,14 +105,12 @@ def insert_job(data):
                 data['subreddit']
             )
         )
-    conn.close()
 
-    return get_job(job_key)
+    return get_job(db_conn, job_key)
 
-def update_job(job_key, data):
-    conn = sqlite3.connect(JOBS_DB_FILE)
-    with conn:
-        conn.execute(
+def update_job(db_conn, job_key, data):
+    with db_conn:
+        db_conn.execute(
             '''
             UPDATE jobs
             SET
@@ -133,26 +131,21 @@ def update_job(job_key, data):
                 job_key,
             )
         )
-    conn.close()
 
-    return get_job(job_key)
+    return get_job(db_conn, job_key)
 
-def delete_job(job_key):
-    conn = sqlite3.connect(JOBS_DB_FILE)
-    with conn:
-        conn.execute(
+def delete_job(db_conn, job_key):
+    with db_conn:
+        db_conn.execute(
             'DELETE FROM jobs WHERE job_key = ?',
             (
                 job_key,
             )
         )
-    conn.close()
 
-def is_valid_job_key(job_key):
-    conn = sqlite3.connect(JOBS_DB_FILE)
-    conn.row_factory = sqlite3.Row
-    with conn:
-        c = conn.execute(
+def is_valid_job_key(db_conn, job_key):
+    with db_conn:
+        c = db_conn.execute(
             '''
             SELECT rowid FROM jobs WHERE job_key = ?
             ''',
@@ -161,11 +154,10 @@ def is_valid_job_key(job_key):
             )
         )
         row = c.fetchone()
-    conn.close()
 
     return row is not None
 
-def get_new_job_key():
+def get_new_job_key(db_conn):
     while True:
         random_key = ''.join(
             random.SystemRandom().choice(
@@ -174,5 +166,5 @@ def get_new_job_key():
             for _ in range(JOB_KEY_LENGTH)
         )
 
-        if not is_valid_job_key(random_key):
+        if not is_valid_job_key(db_conn, random_key):
             return random_key
