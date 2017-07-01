@@ -77,7 +77,7 @@ def create_job(subreddit, target_email, cron_trigger):
     data['cron_trigger'] = cron_trigger
 
     job = db.insert_job(get_db_conn(), data)
-    scheduler.schedule_job(job['job_key'])
+    scheduler.schedule_job(job)
 
     return job
 
@@ -87,11 +87,12 @@ def update_job(job_key, subreddit, target_email, cron_trigger):
     data['target_email'] = target_email
     data['cron_trigger'] = cron_trigger
 
-    db.update_job(get_db_conn(), job_key, data)
-    scheduler.reschedule_job(job_key)
+    job = db.update_job(get_db_conn(), job_key, data)
+    scheduler.reschedule_job(job)
 
 def delete_job(job_key):
-    scheduler.unschedule_job(job_key)
+    job = db.get_job(get_db_conn(), job_key)
+    scheduler.unschedule_job(job)
     db.delete_job(get_db_conn(), job_key)
 
 @app.route("/jobs/")
