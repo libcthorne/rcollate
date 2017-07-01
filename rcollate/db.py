@@ -4,9 +4,13 @@ import random
 import string
 import sqlite3
 
+from rcollate import logs
+
 JOBS_DB_FILE = 'db/jobs.db'
 JOBS_DB_SCHEMA = 'db/jobs_schema.sql'
 JOB_KEY_LENGTH = 20
+
+logger = logs.get_logger()
 
 def open_conn():
     db_conn = sqlite3.connect(JOBS_DB_FILE)
