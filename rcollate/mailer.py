@@ -4,7 +4,7 @@ from jinja2 import Environment, FileSystemLoader
 from rcollate import logs
 
 TEMPLATES = Environment(loader=FileSystemLoader('rcollate/templates'))
-HTML_EMAIL_TEMPLATE = TEMPLATES.get_template("email_body.html")
+HTML_EMAIL_TEMPLATE = TEMPLATES.get_template('email_body.html')
 
 logger = logs.get_logger()
 
