@@ -9,10 +9,10 @@ mailer = None
 scheduler = None
 job_schedules = None
 
-logger = logs.get_logger()
-
 get_job_by_job_key = None
 get_job_url_by_job_key = None
+
+logger = logs.get_logger()
 
 def _run_job_by_job_key(job_key):
     run_job(get_job_by_job_key(job_key))
