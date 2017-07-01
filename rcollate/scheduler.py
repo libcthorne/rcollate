@@ -81,4 +81,7 @@ def start(
         for job_key, job in initial_jobs.items()
     }
 
+    get_job_by_job_key = get_job_by_job_key_fn
+    get_job_url_by_job_key = get_job_url_by_job_key_fn
+
     scheduler.start()
