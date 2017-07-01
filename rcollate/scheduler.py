@@ -30,6 +30,7 @@ def run_job(job):
     )
 
 def schedule_job(job):
+    job_key = job['job_key']
     job_schedules[job_key] = {
         '_handle': scheduler.add_job(
            run_job, 'cron', [job_key], **job['cron_trigger']
