@@ -82,12 +82,12 @@ def create_job(subreddit, target_email, cron_trigger):
     return job
 
 def update_job(job_key, subreddit, target_email, cron_trigger):
-    data = db.get_job(get_db_conn(), job_key)
-    data['subreddit'] = subreddit
-    data['target_email'] = target_email
-    data['cron_trigger'] = cron_trigger
+    job = db.get_job(get_db_conn(), job_key)
+    job['subreddit'] = subreddit
+    job['target_email'] = target_email
+    job['cron_trigger'] = cron_trigger
 
-    job = db.update_job(get_db_conn(), job_key, data)
+    db.update_job(get_db_conn(), job_key, job)
     scheduler.reschedule_job(job)
 
 def delete_job(job_key):
