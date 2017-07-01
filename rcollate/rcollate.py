@@ -4,7 +4,7 @@ import re
 
 from flask import (
     Flask, Response,
-    flash, redirect, render_template, request, url_for,
+    flash, g, redirect, render_template, request, url_for,
 )
 from flask_socketio import SocketIO, emit
 from jinja2 import Environment, FileSystemLoader
@@ -27,6 +27,16 @@ app = Flask('rcollate')
 app.config['SECRET_KEY'] = secrets['session_secret_key']
 
 socketio = SocketIO(app)
+
+def get_db_conn():
+    if not hasattr(g, 'db_conn'):
+        g.db_conn = db.open_conn()
+    return g.db_conn
+
+@app.teardown_appcontext
+def close_db_conn(exception):
+    if hasattr(g, 'db_conn'):
+        g.db_conn.close()
 
 def check_auth(username, password):
     return username == secrets['admin_username'] and password == secrets['admin_password']
@@ -66,39 +76,39 @@ def create_job(subreddit, target_email, cron_trigger):
     data['target_email'] = target_email
     data['cron_trigger'] = cron_trigger
 
-    job = db.insert_job(data)
+    job = db.insert_job(get_db_conn(), data)
     scheduler.schedule_job(job['job_key'])
 
     return job
 
 def update_job(job_key, subreddit, target_email, cron_trigger):
-    data = db.get_job(job_key)
+    data = db.get_job(get_db_conn(), job_key)
     data['subreddit'] = subreddit
     data['target_email'] = target_email
     data['cron_trigger'] = cron_trigger
 
-    db.update_job(job_key, data)
+    db.update_job(get_db_conn(), job_key, data)
     scheduler.reschedule_job(job_key)
 
 def delete_job(job_key):
     scheduler.unschedule_job(job_key)
-    db.delete_job(job_key)
+    db.delete_job(get_db_conn(), job_key)
 
 @app.route("/jobs/")
 @requires_admin
 def jobs_index():
-    return render_template('jobs_index.html', jobs=db.get_jobs())
+    return render_template('jobs_index.html', jobs=db.get_jobs(get_db_conn()))
 
 @app.route('/jobs/<string:job_key>/')
 def jobs_show(job_key):
-    if not db.is_valid_job_key(job_key):
+    if not db.is_valid_job_key(get_db_conn(), job_key):
         return "Job %s not found" % job_key
 
-    return render_template('jobs_show.html', job=db.get_job(job_key))
+    return render_template('jobs_show.html', job=db.get_job(get_db_conn(), job_key))
 
 @app.route('/jobs/<string:job_key>/', methods=['POST'])
 def jobs_update(job_key):
-    if not db.is_valid_job_key(job_key):
+    if not db.is_valid_job_key(get_db_conn(), job_key):
         return "Job %s not found" % job_key
 
     subreddit = request.form.get('subreddit')
@@ -120,10 +130,10 @@ def jobs_update(job_key):
 
 @app.route('/jobs/<string:job_key>/edit/')
 def jobs_edit(job_key):
-    if not db.is_valid_job_key(job_key):
+    if not db.is_valid_job_key(get_db_conn(), job_key):
         return "Job %s not found" % job_key
 
-    return render_template('jobs_edit.html', job=db.get_job(job_key))
+    return render_template('jobs_edit.html', job=db.get_job(get_db_conn(), job_key))
 
 @app.route('/jobs/new/')
 def jobs_new():
@@ -149,7 +159,7 @@ def jobs_create():
 
 @app.route('/jobs/<string:job_key>/delete/', methods=['POST'])
 def jobs_delete(job_key):
-    if not db.is_valid_job_key(job_key):
+    if not db.is_valid_job_key(get_db_conn(), job_key):
         return "Job %s not found" % job_key
 
     delete_job(job_key)

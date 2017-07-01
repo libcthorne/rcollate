@@ -13,7 +13,9 @@ job_schedules = None
 logger = logs.get_logger()
 
 def run_job(job_key):
-    job = db.get_job(job_key)
+    db_conn = db.open_conn()
+    job = db.get_job(db_conn, job_key)
+    db.close_conn(db_conn)
 
     mailer.send_threads(
         r_threads=reddit.top_subreddit_threads(
@@ -27,7 +29,10 @@ def run_job(job_key):
     )
 
 def schedule_job(job_key):
-    job = db.get_job(job_key)
+    db_conn = db.open_conn()
+    job = db.get_job(db_conn, job_key)
+    db.close_conn(db_conn)
+
     job_schedules[job_key] = {
         '_handle': scheduler.add_job(
            run_job, 'cron', [job_key], **job['cron_trigger']
@@ -40,7 +45,10 @@ def unschedule_job(job_key):
     del job_schedules[job_key]
 
 def reschedule_job(job_key):
-    job = db.get_job(job_key)
+    db_conn = db.open_conn()
+    job = db.get_job(db_conn, job_key)
+    db.close_conn(db_conn)
+
     job_schedule = job_schedules[job_key]
     job_schedule['_handle'].reschedule('cron', **job['cron_trigger'])
 
@@ -62,13 +70,15 @@ def start():
 
     scheduler = BackgroundScheduler()
 
+    db_conn = db.open_conn()
     job_schedules = {
         job_key: {
             '_handle': scheduler.add_job(
                run_job, 'cron', [job_key], **job['cron_trigger']
             )
         }
-        for job_key, job in db.get_jobs().items()
+        for job_key, job in db.get_jobs(db_conn).items()
     }
+    db.close_conn(db_conn)
 
     scheduler.start()
