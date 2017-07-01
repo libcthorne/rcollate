@@ -3,7 +3,6 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from rcollate import logs
 from rcollate.config import settings
 from rcollate.mailer import Mailer
-import rcollate.db as db
 import rcollate.reddit as reddit
 
 mailer = None
@@ -12,11 +11,11 @@ job_schedules = None
 
 logger = logs.get_logger()
 
+get_job_by_job_key = None
+get_job_url_by_job_key = None
+
 def _run_job_by_job_key(job_key):
-    db_conn = db.open_conn()
-    job = db.get_job(db_conn, job_key)
-    db.close_conn(db_conn)
-    run_job(job)
+    run_job(get_job_by_job_key(job_key))
 
 def run_job(job):
     mailer.send_threads(
@@ -27,7 +26,7 @@ def run_job(job):
         ),
         target_email=job['target_email'],
         subreddit=job['subreddit'],
-        job_view_url=get_full_job_view_url(job['job_key'])
+        job_view_url=get_job_url_by_job_key(job['job_key'])
     )
 
 def schedule_job(job):
@@ -48,14 +47,17 @@ def reschedule_job(job):
     job_schedule = job_schedules[job_key]
     job_schedule['_handle'].reschedule('cron', **job['cron_trigger'])
 
-def init(get_full_job_view_url_fn):
-    global get_full_job_view_url
-    get_full_job_view_url = get_full_job_view_url_fn
-
-def start():
+def start(
+    initial_jobs,
+    get_job_by_job_key_fn,
+    get_job_url_by_job_key_fn,
+):
     global mailer
     global scheduler
     global job_schedules
+
+    global get_job_by_job_key
+    global get_job_url_by_job_key
 
     mailer = Mailer(
         smtp_host=settings['smtp_host'],
@@ -66,15 +68,16 @@ def start():
 
     scheduler = BackgroundScheduler()
 
-    db_conn = db.open_conn()
     job_schedules = {
         job_key: {
             '_handle': scheduler.add_job(
-               _run_job_by_job_key, 'cron', [job_key], **job['cron_trigger']
+               _run_job_by_job_key,
+                'cron',
+                [job_key],
+                **job['cron_trigger'],
             )
         }
-        for job_key, job in db.get_jobs(db_conn).items()
+        for job_key, job in initial_jobs.items()
     }
-    db.close_conn(db_conn)
 
     scheduler.start()

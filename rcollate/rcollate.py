@@ -185,7 +185,12 @@ def subreddit_search(message):
         'matches': matches,
     })
 
-def get_full_job_view_url(job_key):
+def _get_job_by_job_key(job_key):
+    db_conn = db.open_conn()
+    job = db.get_job(db_conn, job_key)
+    db.close_conn(db_conn)
+
+def _get_job_url_by_job_key(job_key):
     with app.test_request_context():
         return '{}{}'.format(
             settings['app_url'],
@@ -195,7 +200,10 @@ def get_full_job_view_url(job_key):
             )
         )
 
-scheduler.init(
-    get_full_job_view_url_fn=get_full_job_view_url,
+db_conn = db.open_conn()
+scheduler.start(
+    initial_jobs=db.get_jobs(db_conn),
+    get_job_by_job_key_fn=_get_job_by_job_key,
+    get_job_url_by_job_key_fn=_get_job_url_by_job_key,
 )
-scheduler.start()
+db.close_conn(db_conn)
