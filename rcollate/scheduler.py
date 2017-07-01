@@ -69,19 +69,12 @@ def start(
 
     scheduler = BackgroundScheduler()
 
-    job_schedules = {
-        job_key: {
-            '_handle': scheduler.add_job(
-                _run_job_by_job_key,
-                'cron',
-                [job_key],
-                **job['cron_trigger'],
-            )
-        }
-        for job_key, job in initial_jobs.items()
-    }
+    job_schedules = {}
 
     get_job_by_job_key = get_job_by_job_key_fn
     get_job_url_by_job_key = get_job_url_by_job_key_fn
+
+    for job in initial_jobs:
+        schedule_job(job)
 
     scheduler.start()
