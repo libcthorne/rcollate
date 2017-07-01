@@ -14,14 +14,14 @@ from rcollate.config import secrets, settings
 import rcollate.db as db
 import rcollate.reddit as reddit
 
-DEFAULT_CRON_TRIGGER = {"hour": 6}
+DEFAULT_CRON_TRIGGER = {'hour': 6}
 
 JOB_DEFAULTS = {
-    "thread_limit": 10,
-    "time_filter": "day",
+    'thread_limit': 10,
+    'time_filter': 'day',
 }
 
-EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
+EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
 
 app = Flask('rcollate')
 app.config['SECRET_KEY'] = secrets['session_secret_key']
@@ -34,8 +34,8 @@ def check_auth(username, password):
 def authenticate():
     """Sends a 401 response that enables basic auth"""
     return Response(
-    'Could not verify your access level for that URL.\n'
-    'You have to login with proper credentials', 401,
+    "Could not verify your access level for that URL.\n"
+    "You have to login with proper credentials", 401,
     {'WWW-Authenticate': 'Basic realm="Login Required"'})
 
 def requires_admin(f):
@@ -89,14 +89,14 @@ def delete_job(job_key):
 def jobs_index():
     return render_template('jobs_index.html', jobs=db.get_jobs())
 
-@app.route("/jobs/<string:job_key>/")
+@app.route('/jobs/<string:job_key>/')
 def jobs_show(job_key):
     if not db.is_valid_job_key(job_key):
         return "Job %s not found" % job_key
 
     return render_template('jobs_show.html', job=db.get_job(job_key))
 
-@app.route("/jobs/<string:job_key>/", methods=['POST'])
+@app.route('/jobs/<string:job_key>/', methods=['POST'])
 def jobs_update(job_key):
     if not db.is_valid_job_key(job_key):
         return "Job %s not found" % job_key
@@ -118,14 +118,14 @@ def jobs_update(job_key):
 
     return redirect(url_for('jobs_show', job_key=job_key))
 
-@app.route("/jobs/<string:job_key>/edit/")
+@app.route('/jobs/<string:job_key>/edit/')
 def jobs_edit(job_key):
     if not db.is_valid_job_key(job_key):
         return "Job %s not found" % job_key
 
     return render_template('jobs_edit.html', job=db.get_job(job_key))
 
-@app.route("/jobs/new/")
+@app.route('/jobs/new/')
 def jobs_new():
     return render_template('jobs_new.html')
 
@@ -147,14 +147,14 @@ def jobs_create():
 
     return redirect(url_for('jobs_show', job_key=job['job_key']))
 
-@app.route("/jobs/<string:job_key>/delete/", methods=['POST'])
+@app.route('/jobs/<string:job_key>/delete/', methods=['POST'])
 def jobs_delete(job_key):
     if not db.is_valid_job_key(job_key):
         return "Job %s not found" % job_key
 
     delete_job(job_key)
 
-    return redirect(url_for("jobs_new"))
+    return redirect(url_for('jobs_new'))
 
 @app.route("/")
 def index():
@@ -176,10 +176,10 @@ def subreddit_search(message):
 
 def get_full_job_view_url(job_key):
     with app.test_request_context():
-        return "{}{}".format(
+        return '{}{}'.format(
             settings['app_url'],
             url_for(
-                "jobs_show",
+                'jobs_show',
                 job_key=job_key,
             )
         )
