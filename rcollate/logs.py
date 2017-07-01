@@ -1,6 +1,6 @@
 import logging
 
-LOG_FILE_NAME = "rcollate.log"
+LOG_FILE_NAME = 'rcollate.log'
 
 logger = None
 
