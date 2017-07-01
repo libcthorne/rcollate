@@ -72,7 +72,7 @@ def start(
     job_schedules = {
         job_key: {
             '_handle': scheduler.add_job(
-               _run_job_by_job_key,
+                _run_job_by_job_key,
                 'cron',
                 [job_key],
                 **job['cron_trigger'],
