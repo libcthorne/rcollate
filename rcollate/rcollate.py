@@ -95,6 +95,10 @@ def delete_job(job_key):
     scheduler.unschedule_job(job)
     db.delete_job(get_db_conn(), job_key)
 
+def run_job(job_key):
+    job = db.get_job(get_db_conn(), job_key)
+    scheduler.run_job(job)
+
 @app.route("/jobs/")
 @requires_admin
 def jobs_index():
@@ -167,6 +171,15 @@ def jobs_delete(job_key):
 
     return redirect(url_for('jobs_new'))
 
+@app.route('/jobs/<string:job_key>/run/', methods=['POST'])
+def jobs_run(job_key):
+    if not db.is_valid_job_key(get_db_conn(), job_key):
+        return "Job %s not found" % job_key
+
+    run_job(job_key)
+
+    return redirect(url_for('jobs_show', job_key=job_key))
+
 @app.route("/")
 def index():
     return jobs_new()
@@ -200,6 +213,8 @@ def _get_job_url_by_job_key(job_key):
                 job_key=job_key,
             )
         )
+
+db.init()
 
 db_conn = db.open_conn()
 scheduler.start(

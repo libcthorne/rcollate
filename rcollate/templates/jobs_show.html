@@ -11,4 +11,8 @@
 	<form action="/jobs/{{ job.job_key }}/delete/" method="post">
 		<input type="submit" value="delete"/>
 	</form>
+
+	<form action="/jobs/{{ job.job_key }}/run/" method="post">
+		<input type="submit" value="test email"/>
+	</form>
 {% endblock %}
