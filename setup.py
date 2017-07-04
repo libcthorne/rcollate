@@ -12,5 +12,6 @@ setup(
         'Jinja2==2.9.6',
         'jsonschema',
         'praw==4.5.1',
+        'sqlalchemy',
     ],
 )
