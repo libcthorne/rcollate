@@ -1,8 +1,15 @@
-import json
-from pathlib import Path
 import random
 import string
-import sqlite3
+
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    PickleType,
+    String,
+)
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
 
 from rcollate import logs
 
@@ -10,156 +17,86 @@ JOBS_DB_FILE = 'db/jobs.db'
 JOBS_DB_SCHEMA = 'db/jobs_schema.sql'
 JOB_KEY_LENGTH = 20
 
+engine = create_engine('sqlite:///{}'.format(JOBS_DB_FILE), echo=True)
+Base = declarative_base()
+Session = sessionmaker(bind=engine)
+
 logger = logs.get_logger()
 
+class Job(Base):
+    __tablename__ = 'jobs'
+
+    job_id = Column(Integer, primary_key=True)
+    job_key = Column(String, nullable=False)
+    thread_limit = Column(Integer, nullable=False)
+    target_email = Column(String, nullable=False)
+    time_filter = Column(String, nullable=False)
+    cron_trigger = Column(PickleType, nullable=False)
+    subreddit = Column(String, nullable=False)
+
+    def __repr__(self):
+        return "<Job(job_key=%s, subreddit=%s)>" % (
+            self.job_key,
+            self.subreddit,
+        )
+
 def open_conn():
-    db_conn = sqlite3.connect(JOBS_DB_FILE)
-    db_conn.row_factory = sqlite3.Row
-    return db_conn
+    return Session()
 
 def close_conn(db_conn):
     db_conn.close()
 
 def init():
-    if Path(JOBS_DB_FILE).is_file():
-        logger.info("DB already initialized")
-        return
-
-    logger.info("Initializing DB")
-
-    with open(JOBS_DB_SCHEMA) as f:
-        db_conn = open_conn()
-        with db_conn:
-            db_conn.executescript(f.read())
-        close_conn(db_conn)
+    Base.metadata.create_all(engine)
 
 def get_job(db_conn, job_key):
-    with db_conn:
-        c = db_conn.execute(
-            '''
-            SELECT * FROM jobs
-            WHERE job_key = ?
-            ''',
-            (
-                job_key,
-            )
-        )
-        row = c.fetchone()
-
-    if row:
-        return {
-            'job_key': row['job_key'],
-            'thread_limit': row['thread_limit'],
-            'target_email': row['target_email'],
-            'time_filter': row['time_filter'],
-            'cron_trigger': json.loads(row['cron_trigger']),
-            'subreddit': row['subreddit'],
-        }
+    job = db_conn.query(Job).filter_by(job_key=job_key).one()
+    return job.__dict__
 
 def get_jobs(db_conn):
-    rows = []
-    with db_conn:
-        c = db_conn.execute('SELECT * FROM jobs')
-        rows = c.fetchall()
-
-    jobs = {}
-
-    for row in rows:
-        job_key = row['job_key']
-        job = {
-            'job_key': job_key,
-            'thread_limit': row['thread_limit'],
-            'target_email': row['target_email'],
-            'time_filter': row['time_filter'],
-            'cron_trigger': json.loads(row['cron_trigger']),
-            'subreddit': row['subreddit'],
-        }
-        jobs[job_key] = job
-
-    return jobs
+    jobs = db_conn.query(Job).all()
+    return {
+        job.job_key: job.__dict__ for job in jobs
+    }
 
 def insert_job(db_conn, data):
     job_key = get_new_job_key(db_conn)
 
-    with db_conn:
-        db_conn.execute(
-            '''
-            INSERT INTO jobs (
-                job_key,
-                thread_limit,
-                target_email,
-                time_filter,
-                cron_trigger,
-                subreddit
-            ) VALUES (
-                ?,
-                ?,
-                ?,
-                ?,
-                ?,
-                ?
-            )
-            ''',
-            (
-                job_key,
-                data['thread_limit'],
-                data['target_email'],
-                data['time_filter'],
-                json.dumps(data['cron_trigger']),
-                data['subreddit']
-            )
-        )
+    job = Job(
+        job_key=job_key,
+        thread_limit=data['thread_limit'],
+        target_email=data['target_email'],
+        time_filter=data['time_filter'],
+        cron_trigger=data['cron_trigger'],
+        subreddit=data['subreddit'],
+    )
+
+    db_conn.add(job)
+    db_conn.commit()
 
     return get_job(db_conn, job_key)
 
 def update_job(db_conn, job_key, data):
-    with db_conn:
-        db_conn.execute(
-            '''
-            UPDATE jobs
-            SET
-                thread_limit = ?,
-                target_email = ?,
-                time_filter = ?,
-                cron_trigger = ?,
-                subreddit = ?
-            WHERE
-                job_key = ?
-            ''',
-            (
-                data['thread_limit'],
-                data['target_email'],
-                data['time_filter'],
-                json.dumps(data['cron_trigger']),
-                data['subreddit'],
-                job_key,
-            )
-        )
+    job = db_conn.query(Job).filter_by(job_key=job_key).one()
+    job.thread_limit = data['thread_limit']
+    job.target_email = data['target_email']
+    job.time_filter = data['time_filter']
+    job.cron_trigger = data['cron_trigger']
+    job.subreddit = data['subreddit']
+    job.job_key = job_key
+
+    db_conn.commit()
 
     return get_job(db_conn, job_key)
 
 def delete_job(db_conn, job_key):
-    with db_conn:
-        db_conn.execute(
-            'DELETE FROM jobs WHERE job_key = ?',
-            (
-                job_key,
-            )
-        )
+    job = db_conn.query(Job).filter_by(job_key=job_key).one()
+    db_conn.delete(job)
+    db_conn.commit()
 
 def is_valid_job_key(db_conn, job_key):
-    with db_conn:
-        c = db_conn.execute(
-            '''
-            SELECT rowid FROM jobs WHERE job_key = ?
-            ''',
-            (
-                job_key,
-            )
-        )
-        row = c.fetchone()
-
-    return row is not None
+    return db_conn.query(Job.job_id).\
+        filter_by(job_key=job_key).count() == 1
 
 def get_new_job_key(db_conn):
     while True:
