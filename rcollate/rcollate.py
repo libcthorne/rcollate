@@ -11,15 +11,11 @@ from jinja2 import Environment, FileSystemLoader
 
 from rcollate import scheduler
 from rcollate.config import secrets, settings
+from rcollate.models import Job
 import rcollate.db as db
 import rcollate.reddit as reddit
 
 DEFAULT_CRON_TRIGGER = {'hour': 6}
-
-JOB_DEFAULTS = {
-    'thread_limit': 10,
-    'time_filter': 'day',
-}
 
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
 
@@ -71,23 +67,24 @@ def validate_job_fields(subreddit, target_email):
         return "Email is invalid"
 
 def create_job(subreddit, target_email, cron_trigger):
-    data = JOB_DEFAULTS.copy()
-    data['subreddit'] = subreddit
-    data['target_email'] = target_email
-    data['cron_trigger'] = cron_trigger
+    job = Job(
+        subreddit=subreddit,
+        target_email=target_email,
+        cron_trigger=DEFAULT_CRON_TRIGGER,
+    )
 
-    job = db.insert_job(get_db_conn(), data)
+    db.insert_job(get_db_conn(), job)
     scheduler.schedule_job(job)
 
     return job
 
 def update_job(job_key, subreddit, target_email, cron_trigger):
     job = db.get_job(get_db_conn(), job_key)
-    job['subreddit'] = subreddit
-    job['target_email'] = target_email
-    job['cron_trigger'] = cron_trigger
+    job.subreddit = subreddit
+    job.target_email = target_email
+    job.cron_trigger = cron_trigger
 
-    db.update_job(get_db_conn(), job_key, job)
+    db.update_job(get_db_conn(), job)
     scheduler.reschedule_job(job)
 
 def delete_job(job_key):
@@ -160,7 +157,7 @@ def jobs_create():
         cron_trigger=DEFAULT_CRON_TRIGGER,
     )
 
-    return redirect(url_for('jobs_show', job_key=job['job_key']))
+    return redirect(url_for('jobs_show', job_key=job.job_key))
 
 @app.route('/jobs/<string:job_key>/delete/', methods=['POST'])
 def jobs_delete(job_key):
