@@ -20,33 +20,33 @@ def _run_job_by_job_key(job_key):
 def run_job(job):
     mailer.send_threads(
         r_threads=reddit.top_subreddit_threads(
-            job['subreddit'],
-            job['time_filter'],
-            job['thread_limit'],
+            job.subreddit,
+            job.time_filter,
+            job.thread_limit,
         ),
-        target_email=job['target_email'],
-        subreddit=job['subreddit'],
-        job_view_url=get_job_url_by_job_key(job['job_key'])
+        target_email=job.target_email,
+        subreddit=job.subreddit,
+        job_view_url=get_job_url_by_job_key(job.job_key)
     )
 
 def schedule_job(job):
-    job_key = job['job_key']
+    job_key = job.job_key
     job_schedules[job_key] = {
         '_handle': scheduler.add_job(
-           _run_job_by_job_key, 'cron', [job_key], **job['cron_trigger']
+           _run_job_by_job_key, 'cron', [job_key], **job.cron_trigger
         )
     }
 
 def unschedule_job(job):
-    job_key = job['job_key']
+    job_key = job.job_key
     job_schedule = job_schedules[job_key]
     job_schedule['_handle'].remove()
     del job_schedules[job_key]
 
 def reschedule_job(job):
-    job_key = job['job_key']
+    job_key = job.job_key
     job_schedule = job_schedules[job_key]
-    job_schedule['_handle'].reschedule('cron', **job['cron_trigger'])
+    job_schedule['_handle'].reschedule('cron', **job.cron_trigger)
 
 def start(
     initial_jobs,

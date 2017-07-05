@@ -5,40 +5,36 @@ from sqlalchemy import (
     create_engine,
     Column,
     Integer,
+    MetaData,
     PickleType,
     String,
+    Table,
 )
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import mapper, sessionmaker
 
 from rcollate import logs
+from rcollate.models import Job
 
 JOBS_DB_FILE = 'db/jobs.db'
 JOBS_DB_SCHEMA = 'db/jobs_schema.sql'
 JOB_KEY_LENGTH = 20
 
 engine = create_engine('sqlite:///{}'.format(JOBS_DB_FILE), echo=True)
-Base = declarative_base()
+metadata = MetaData()
 Session = sessionmaker(bind=engine)
 
 logger = logs.get_logger()
 
-class Job(Base):
-    __tablename__ = 'jobs'
-
-    job_id = Column(Integer, primary_key=True)
-    job_key = Column(String, nullable=False)
-    thread_limit = Column(Integer, nullable=False)
-    target_email = Column(String, nullable=False)
-    time_filter = Column(String, nullable=False)
-    cron_trigger = Column(PickleType, nullable=False)
-    subreddit = Column(String, nullable=False)
-
-    def __repr__(self):
-        return "<Job(job_key=%s, subreddit=%s)>" % (
-            self.job_key,
-            self.subreddit,
-        )
+jobs_table = Table('jobs', metadata,
+   Column('subreddit', String, nullable=False),
+   Column('target_email', String, nullable=False),
+   Column('cron_trigger', PickleType, nullable=False),
+   Column('thread_limit', Integer, nullable=False),
+   Column('time_filter', String, nullable=False),
+   Column('job_id', Integer, primary_key=True),
+   Column('job_key', String, nullable=False),
+)
+mapper(Job, jobs_table)
 
 def open_conn():
     return Session()
@@ -47,47 +43,30 @@ def close_conn(db_conn):
     db_conn.close()
 
 def init():
-    Base.metadata.create_all(engine)
+    metadata.create_all(bind=engine)
 
 def get_job(db_conn, job_key):
     job = db_conn.query(Job).filter_by(job_key=job_key).one()
-    return job.__dict__
+    return job
 
 def get_jobs(db_conn):
     jobs = db_conn.query(Job).all()
     return {
-        job.job_key: job.__dict__ for job in jobs
+        job.job_key: job for job in jobs
     }
 
-def insert_job(db_conn, data):
-    job_key = get_new_job_key(db_conn)
-
-    job = Job(
-        job_key=job_key,
-        thread_limit=data['thread_limit'],
-        target_email=data['target_email'],
-        time_filter=data['time_filter'],
-        cron_trigger=data['cron_trigger'],
-        subreddit=data['subreddit'],
-    )
+def insert_job(db_conn, job):
+    if job.job_key is None:
+        job.job_key = get_new_job_key(db_conn)
 
     db_conn.add(job)
     db_conn.commit()
 
-    return get_job(db_conn, job_key)
+    return job
 
-def update_job(db_conn, job_key, data):
-    job = db_conn.query(Job).filter_by(job_key=job_key).one()
-    job.thread_limit = data['thread_limit']
-    job.target_email = data['target_email']
-    job.time_filter = data['time_filter']
-    job.cron_trigger = data['cron_trigger']
-    job.subreddit = data['subreddit']
-    job.job_key = job_key
-
+def update_job(db_conn, job):
     db_conn.commit()
-
-    return get_job(db_conn, job_key)
+    return job
 
 def delete_job(db_conn, job_key):
     job = db_conn.query(Job).filter_by(job_key=job_key).one()
