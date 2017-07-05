@@ -26,6 +26,9 @@ function receiveSubredditSearchResponse(msg) {
   if (msg.subreddit != $subredditInput.val())
     return;
 
+  if (!$subredditInput.is(":focus"))
+    return;
+
   // update suggestions
   $subredditInput.autocomplete("option", {
     source: msg.matches
