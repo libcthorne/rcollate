@@ -83,11 +83,11 @@ def create_job(subreddit, target_email, cron_trigger):
 
 def update_job(job_key, subreddit, target_email, cron_trigger):
     job = db.get_job(get_db_conn(), job_key)
-    job['subreddit'] = subreddit
-    job['target_email'] = target_email
-    job['cron_trigger'] = cron_trigger
+    job.subreddit = subreddit
+    job.target_email = target_email
+    job.cron_trigger = cron_trigger
 
-    db.update_job(get_db_conn(), job_key, job)
+    db.update_job(get_db_conn(), job)
     scheduler.reschedule_job(job)
 
 def delete_job(job_key):
@@ -160,7 +160,7 @@ def jobs_create():
         cron_trigger=DEFAULT_CRON_TRIGGER,
     )
 
-    return redirect(url_for('jobs_show', job_key=job['job_key']))
+    return redirect(url_for('jobs_show', job_key=job.job_key))
 
 @app.route('/jobs/<string:job_key>/delete/', methods=['POST'])
 def jobs_delete(job_key):

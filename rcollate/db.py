@@ -51,17 +51,16 @@ def init():
 
 def get_job(db_conn, job_key):
     job = db_conn.query(Job).filter_by(job_key=job_key).one()
-    return job.__dict__
+    return job
 
 def get_jobs(db_conn):
     jobs = db_conn.query(Job).all()
     return {
-        job.job_key: job.__dict__ for job in jobs
+        job.job_key: job for job in jobs
     }
 
 def insert_job(db_conn, data):
     job_key = get_new_job_key(db_conn)
-
     job = Job(
         job_key=job_key,
         thread_limit=data['thread_limit'],
@@ -74,20 +73,11 @@ def insert_job(db_conn, data):
     db_conn.add(job)
     db_conn.commit()
 
-    return get_job(db_conn, job_key)
+    return job
 
-def update_job(db_conn, job_key, data):
-    job = db_conn.query(Job).filter_by(job_key=job_key).one()
-    job.thread_limit = data['thread_limit']
-    job.target_email = data['target_email']
-    job.time_filter = data['time_filter']
-    job.cron_trigger = data['cron_trigger']
-    job.subreddit = data['subreddit']
-    job.job_key = job_key
-
+def update_job(db_conn, job):
     db_conn.commit()
-
-    return get_job(db_conn, job_key)
+    return job
 
 def delete_job(db_conn, job_key):
     job = db_conn.query(Job).filter_by(job_key=job_key).one()
