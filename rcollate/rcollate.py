@@ -1,4 +1,3 @@
-import ast
 from functools import wraps
 import re
 
