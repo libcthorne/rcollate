@@ -33,4 +33,4 @@ class JobForm(FlaskForm):
 
     def validate_subreddit(form, field):
         if not reddit.subreddit_exists(field.data):
-            raise ValidationError("Subreddit not found")
+            raise ValidationError("Please enter a valid subreddit")
