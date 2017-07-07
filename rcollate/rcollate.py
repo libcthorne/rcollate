@@ -1,5 +1,4 @@
 from functools import wraps
-import re
 
 from flask import (
     Flask, Response,
@@ -13,10 +12,9 @@ from rcollate.config import secrets, settings
 from rcollate.models import Job
 import rcollate.db as db
 import rcollate.reddit as reddit
+import rcollate.forms as forms
 
 DEFAULT_CRON_TRIGGER = {'hour': 6}
-
-EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$')
 
 app = Flask('rcollate')
 app.config['SECRET_KEY'] = secrets['session_secret_key']
@@ -51,19 +49,6 @@ def requires_admin(f):
             return authenticate()
         return f(*args, **kwargs)
     return decorated
-
-def validate_job_fields(subreddit, target_email):
-    if subreddit is None or len(subreddit) == 0:
-        return "Subreddit is missing"
-
-    if target_email is None or len(target_email) == 0:
-        return "Email is missing"
-
-    if not reddit.subreddit_exists(subreddit):
-        return "Subreddit not found"
-
-    if not EMAIL_REGEX.match(target_email):
-        return "Email is invalid"
 
 def create_job(subreddit, target_email, cron_trigger):
     job = Job(
@@ -108,55 +93,48 @@ def jobs_show(job_key):
     return render_template('jobs_show.html', job=db.get_job(get_db_conn(), job_key))
 
 @app.route('/jobs/<string:job_key>/', methods=['POST'])
-def jobs_update(job_key):
-    if not db.is_valid_job_key(get_db_conn(), job_key):
-        return "Job %s not found" % job_key
-
-    subreddit = request.form.get('subreddit')
-    target_email = request.form.get('target_email')
-
-    error = validate_job_fields(subreddit, target_email)
-    if error is not None:
-        flash(error)
-        return redirect(url_for('jobs_edit', job_key=job_key))
-
-    update_job(
-        job_key=job_key,
-        subreddit=subreddit,
-        target_email=target_email,
-        cron_trigger=DEFAULT_CRON_TRIGGER,
-    )
-
-    return redirect(url_for('jobs_show', job_key=job_key))
-
-@app.route('/jobs/<string:job_key>/edit/')
+@app.route('/jobs/<string:job_key>/edit/', methods=['GET', 'POST'])
 def jobs_edit(job_key):
     if not db.is_valid_job_key(get_db_conn(), job_key):
         return "Job %s not found" % job_key
 
-    return render_template('jobs_edit.html', job=db.get_job(get_db_conn(), job_key))
+    if request.form:
+        form = forms.JobForm(request.form)
+    else:
+        job = db.get_job(get_db_conn(), job_key)
+        form = forms.JobForm(
+            subreddit=job.subreddit,
+            target_email=job.target_email,
+        )
 
-@app.route('/jobs/new/')
+    if form.validate_on_submit():
+        update_job(
+            job_key=job_key,
+            subreddit=form.subreddit.data,
+            target_email=form.target_email.data,
+            cron_trigger=DEFAULT_CRON_TRIGGER,
+        )
+
+        return redirect(url_for('jobs_show', job_key=job_key))
+
+    return render_template('jobs_edit.html', form=form)
+
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/jobs/', methods=['POST'])
+@app.route('/jobs/new/', methods=['GET', 'POST'])
 def jobs_new():
-    return render_template('jobs_new.html')
+    form = forms.JobForm(request.form)
 
-@app.route("/jobs/", methods=['POST'])
-def jobs_create():
-    subreddit = request.form.get('subreddit')
-    target_email = request.form.get('target_email')
+    if form.validate_on_submit():
+        job = create_job(
+            subreddit=form.subreddit.data,
+            target_email=form.target_email.data,
+            cron_trigger=DEFAULT_CRON_TRIGGER,
+        )
 
-    error = validate_job_fields(subreddit, target_email)
-    if error is not None:
-        flash(error)
-        return redirect(url_for('jobs_new'))
+        return redirect(url_for('jobs_show', job_key=job.job_key))
 
-    job = create_job(
-        subreddit=subreddit,
-        target_email=target_email,
-        cron_trigger=DEFAULT_CRON_TRIGGER,
-    )
-
-    return redirect(url_for('jobs_show', job_key=job.job_key))
+    return render_template('jobs_new.html', form=form)
 
 @app.route('/jobs/<string:job_key>/delete/', methods=['POST'])
 def jobs_delete(job_key):
@@ -175,10 +153,6 @@ def jobs_run(job_key):
     run_job(job_key)
 
     return redirect(url_for('jobs_show', job_key=job_key))
-
-@app.route("/")
-def index():
-    return jobs_new()
 
 @socketio.on('subreddit_search_request')
 def subreddit_search(message):
