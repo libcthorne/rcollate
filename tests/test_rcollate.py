@@ -19,20 +19,20 @@ class RCollateTestCase(unittest.TestCase):
             ).decode('ascii')
         }
 
-class TestJobsIndex(RCollateTestCase):
-    def test_jobs_index_no_auth(self):
+class TestJobsIndexPage(RCollateTestCase):
+    def test_no_auth(self):
         rv = self.app.get('/jobs/')
         self.assertEqual(rv.status_code, 401)
 
-    def test_jobs_index_auth(self):
+    def test_auth(self):
         rv = self.app.get('/jobs/', headers=self.auth_headers)
         self.assertEqual(rv.status_code, 200)
 
-    def test_jobs_index_no_jobs(self):
+    def test_no_jobs(self):
         rv = self.app.get('/jobs/', headers=self.auth_headers)
         self.assertFalse('Job ' in str(rv.data))
 
-    def test_jobs_index_with_jobs(self):
+    def test_with_jobs(self):
         with rcollate.app.app_context():
             job = rcollate.rcollate.create_job('_test_', '_test_')
             rv = self.app.get('/jobs/', headers=self.auth_headers)
