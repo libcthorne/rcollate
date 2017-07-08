@@ -4,6 +4,5 @@
   "sender_email": "rcollate@cthorne.me",
   "smtp_host": "localhost",
   "smtp_timeout": 5,
-  "app_url": "http://localhost:5000",
-  "db_file": "db/jobs.db"
+  "app_url": "http://localhost:5000"
 }

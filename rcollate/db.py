@@ -13,13 +13,19 @@ from sqlalchemy import (
 from sqlalchemy.orm import mapper, sessionmaker
 
 from rcollate import logs
+from rcollate.config import settings
 from rcollate.models import Job
 
 JOBS_DB_FILE = 'db/jobs.db'
 JOBS_DB_SCHEMA = 'db/jobs_schema.sql'
 JOB_KEY_LENGTH = 20
 
-engine = create_engine('sqlite:///{}'.format(JOBS_DB_FILE), echo=True)
+if 'db_file' in settings:
+    engine_url = 'sqlite:///{}'.format(settings['db_file'])
+else:
+    engine_url = 'sqlite://'
+
+engine = create_engine(engine_url, echo=True)
 metadata = MetaData()
 Session = sessionmaker(bind=engine)
 

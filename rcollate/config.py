@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 
 from jsonschema import validate
@@ -15,6 +16,7 @@ SETTINGS_SCHEMA = {
         'smtp_host': {'type': 'string'},
         'smtp_timeout': {'type': 'integer'},
         'app_url': {'type': 'string'},
+        'db_file': {'type': 'string'},
     },
     'required': [
         'user_agent',
@@ -59,5 +61,14 @@ def read_config_file(path, schema):
         ))
         sys.exit(1)
 
-settings = read_config_file('config/settings.json', SETTINGS_SCHEMA)
-secrets = read_config_file('config/secrets.json', SECRETS_SCHEMA)
+config_dir = os.environ.get('CONFIG_DIR', 'config')
+
+settings = read_config_file(
+    '{}/settings.json'.format(config_dir),
+    SETTINGS_SCHEMA
+)
+
+secrets = read_config_file(
+    '{}/secrets.json'.format(config_dir),
+    SECRETS_SCHEMA
+)
