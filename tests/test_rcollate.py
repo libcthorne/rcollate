@@ -21,7 +21,20 @@ class RCollateTestCase(unittest.TestCase):
         rcollate.reddit.subreddit_exists = mock_subreddit_exists
 
     def tearDown(self):
+        self.clear_jobs()
+
         rcollate.reddit.subreddit_exists = self.mocks['subreddit_exists']
+
+    def create_job(self, subreddit, target_email):
+        with rcollate.app.app_context():
+            job = rcollate.rcollate.create_job(subreddit, target_email)
+        return job
+
+    def clear_jobs(self):
+        with rcollate.app.app_context():
+            db_conn = rcollate.rcollate.get_db_conn()
+            for job in rcollate.db.get_jobs(db_conn).values():
+                rcollate.db.delete_job(db_conn, job.job_key)
 
     @property
     def auth_headers(self):
@@ -45,11 +58,9 @@ class TestJobsIndexPage(RCollateTestCase):
         self.assertFalse('Job ' in str(rv.data))
 
     def test_with_jobs(self):
-        with rcollate.app.app_context():
-            job = rcollate.rcollate.create_job('_test_', '_test_')
-            rv = self.app.get('/jobs/', headers=self.auth_headers)
-            self.assertTrue('Job ' in str(rv.data))
-            rcollate.rcollate.delete_job(job.job_key)
+        job = self.create_job('_test_', '_test_')
+        rv = self.app.get('/jobs/', headers=self.auth_headers)
+        self.assertIn('Job [' + job.job_key + ']', str(rv.data))
 
 class TestJobsNewPage(RCollateTestCase):
     def test_get_status_code(self):
@@ -77,7 +88,6 @@ class TestJobsNewPage(RCollateTestCase):
         })
         self.assertEqual(rv.status_code, 302)
         self.assertRegex(rv.location, '/jobs/[0-9a-zA-Z]+')
-
 
 if __name__ == "__main__":
     unittest.main()
