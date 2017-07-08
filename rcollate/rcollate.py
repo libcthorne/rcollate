@@ -129,7 +129,6 @@ def jobs_new():
         job = create_job(
             subreddit=form.subreddit.data,
             target_email=form.target_email.data,
-            cron_trigger=DEFAULT_CRON_TRIGGER,
         )
 
         return redirect(url_for('jobs_show', job_key=job.job_key))
