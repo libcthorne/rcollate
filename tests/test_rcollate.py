@@ -28,5 +28,16 @@ class TestJobsIndex(RCollateTestCase):
         rv = self.app.get('/jobs/', headers=self.auth_headers)
         self.assertEqual(rv.status_code, 200)
 
+    def test_jobs_index_no_jobs(self):
+        rv = self.app.get('/jobs/', headers=self.auth_headers)
+        self.assertFalse('Job ' in str(rv.data))
+
+    def test_jobs_index_with_jobs(self):
+        with rcollate.app.app_context():
+            job = rcollate.rcollate.create_job('_test_', '_test_')
+            rv = self.app.get('/jobs/', headers=self.auth_headers)
+            self.assertTrue('Job ' in str(rv.data))
+            rcollate.rcollate.delete_job(job.job_key)
+
 if __name__ == "__main__":
     unittest.main()
