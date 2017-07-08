@@ -50,7 +50,7 @@ def requires_admin(f):
         return f(*args, **kwargs)
     return decorated
 
-def create_job(subreddit, target_email, cron_trigger):
+def create_job(subreddit, target_email):
     job = Job(
         subreddit=subreddit,
         target_email=target_email,
