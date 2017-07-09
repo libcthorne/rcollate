@@ -2,7 +2,10 @@ import base64
 import unittest
 from unittest.mock import patch
 
+from flask_socketio import SocketIO
+
 import rcollate
+from rcollate.reddit import Subreddit
 
 VALID_SUBREDDITS = ['hello', 'world']
 VALID_SUBREDDIT = VALID_SUBREDDITS[0]
@@ -148,3 +151,41 @@ class JobsEditPageTest(RCollateTestCase):
         })
         self.assertEqual(rv.status_code, 302)
         self.assertIn('/jobs/%s/' % job.job_key, rv.location)
+
+class JobsRunPageTest(RCollateTestCase):
+    def test_post_invalid_job(self):
+        rv = self.app.post('/jobs/nonexistentjobkey/run/')
+        self.assertEqual(rv.status_code, 404)
+        self.assertIn('Job nonexistentjobkey not found', str(rv.data))
+
+    @patch('rcollate.scheduler.mailer.send_threads')
+    def test_post_valid_job(self, mock_send_threads):
+        job = self.create_job()
+        rv = self.app.post('/jobs/%s/run/' % job.job_key)
+        self.assertEqual(rv.status_code, 302)
+        self.assertIn('/jobs/%s/' % job.job_key, rv.location)
+
+class SubredditSearchTest(RCollateTestCase):
+    def mock_subreddit_search(subreddit):
+        return [
+            Subreddit('test1'),
+            Subreddit('test2'),
+        ]
+
+    @patch('rcollate.reddit.subreddit_search', mock_subreddit_search)
+    def test_search(self):
+        client = rcollate.socketio.test_client(rcollate.app)
+        client.emit('subreddit_search_request', {
+            'subreddit': 'test',
+        })
+        received = client.get_received()
+        print(received)
+        client.disconnect()
+
+class HelpersTest(RCollateTestCase):
+    def test_get_job_by_job_key(self):
+        job = self.create_job()
+        self.assertEqual(
+            rcollate.rcollate._get_job_by_job_key(job.job_key).job_id,
+            job.job_id
+        )
