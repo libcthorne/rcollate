@@ -101,5 +101,16 @@ class TestJobsShowPage(RCollateTestCase):
         self.assertEqual(rv.status_code, 200)
         self.assertIn('_test_', str(rv.data))
 
+class TestJobsDeletePage(RCollateTestCase):
+    def test_delete_invalid_job(self):
+        rv = self.app.post('/jobs/nonexistentjobkey/delete/')
+        self.assertEqual(rv.status_code, 404)
+        self.assertIn('Job nonexistentjobkey not found', str(rv.data))
+
+    def test_delete_valid_job(self):
+        job = self.create_job('_test_', '_test_')
+        rv = self.app.post('/jobs/%s/' % job.job_key)
+        self.assertEqual(rv.status_code, 200)
+
 if __name__ == '__main__':
     unittest.main()
