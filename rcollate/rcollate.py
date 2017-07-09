@@ -107,15 +107,18 @@ def jobs_edit(job_key):
             target_email=job.target_email,
         )
 
-    if form.validate_on_submit():
-        update_job(
-            job_key=job_key,
-            subreddit=form.subreddit.data,
-            target_email=form.target_email.data,
-            cron_trigger=DEFAULT_CRON_TRIGGER,
-        )
+    if request.method == 'POST':
+        if form.validate():
+            update_job(
+                job_key=job_key,
+                subreddit=form.subreddit.data,
+                target_email=form.target_email.data,
+                cron_trigger=DEFAULT_CRON_TRIGGER,
+            )
 
-        return redirect(url_for('jobs_show', job_key=job_key))
+            return redirect(url_for('jobs_show', job_key=job_key))
+        else:
+            return render_template('jobs_edit.html', form=form), 400
 
     return render_template('jobs_edit.html', form=form)
 
