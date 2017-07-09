@@ -89,5 +89,5 @@ class TestJobsNewPage(RCollateTestCase):
         self.assertEqual(rv.status_code, 302)
         self.assertRegex(rv.location, '/jobs/[0-9a-zA-Z]+')
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()
