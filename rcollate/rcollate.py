@@ -50,7 +50,7 @@ def requires_admin(f):
         return f(*args, **kwargs)
     return decorated
 
-def create_job(subreddit, target_email, cron_trigger):
+def create_job(subreddit, target_email):
     job = Job(
         subreddit=subreddit,
         target_email=target_email,
@@ -88,7 +88,7 @@ def jobs_index():
 @app.route('/jobs/<string:job_key>/')
 def jobs_show(job_key):
     if not db.is_valid_job_key(get_db_conn(), job_key):
-        return "Job %s not found" % job_key
+        return "Job %s not found" % job_key, 404
 
     return render_template('jobs_show.html', job=db.get_job(get_db_conn(), job_key))
 
@@ -96,7 +96,7 @@ def jobs_show(job_key):
 @app.route('/jobs/<string:job_key>/edit/', methods=['GET', 'POST'])
 def jobs_edit(job_key):
     if not db.is_valid_job_key(get_db_conn(), job_key):
-        return "Job %s not found" % job_key
+        return "Job %s not found" % job_key, 404
 
     if request.form:
         form = forms.JobForm(request.form)
@@ -107,15 +107,18 @@ def jobs_edit(job_key):
             target_email=job.target_email,
         )
 
-    if form.validate_on_submit():
-        update_job(
-            job_key=job_key,
-            subreddit=form.subreddit.data,
-            target_email=form.target_email.data,
-            cron_trigger=DEFAULT_CRON_TRIGGER,
-        )
+    if request.method == 'POST':
+        if form.validate():
+            update_job(
+                job_key=job_key,
+                subreddit=form.subreddit.data,
+                target_email=form.target_email.data,
+                cron_trigger=DEFAULT_CRON_TRIGGER,
+            )
 
-        return redirect(url_for('jobs_show', job_key=job_key))
+            return redirect(url_for('jobs_show', job_key=job_key))
+        else:
+            return render_template('jobs_edit.html', form=form), 400
 
     return render_template('jobs_edit.html', form=form)
 
@@ -129,7 +132,6 @@ def jobs_new():
         job = create_job(
             subreddit=form.subreddit.data,
             target_email=form.target_email.data,
-            cron_trigger=DEFAULT_CRON_TRIGGER,
         )
 
         return redirect(url_for('jobs_show', job_key=job.job_key))
@@ -139,7 +141,7 @@ def jobs_new():
 @app.route('/jobs/<string:job_key>/delete/', methods=['POST'])
 def jobs_delete(job_key):
     if not db.is_valid_job_key(get_db_conn(), job_key):
-        return "Job %s not found" % job_key
+        return "Job %s not found" % job_key, 404
 
     delete_job(job_key)
 
@@ -148,7 +150,7 @@ def jobs_delete(job_key):
 @app.route('/jobs/<string:job_key>/run/', methods=['POST'])
 def jobs_run(job_key):
     if not db.is_valid_job_key(get_db_conn(), job_key):
-        return "Job %s not found" % job_key
+        return "Job %s not found" % job_key, 404
 
     run_job(job_key)
 
