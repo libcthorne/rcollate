@@ -2,7 +2,7 @@ import unittest
 
 from rcollate import models
 
-class JobModelTest(unittest.TestCase):
+class ModelsTest(unittest.TestCase):
     def test_job_model_create_no_key(self):
         job = models.Job(
             subreddit='hello',

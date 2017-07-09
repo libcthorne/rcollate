@@ -46,7 +46,7 @@ class RCollateTestCase(unittest.TestCase):
             ).decode('ascii')
         }
 
-class TestJobsIndexPage(RCollateTestCase):
+class JobsIndexPageTest(RCollateTestCase):
     def test_no_auth(self):
         rv = self.app.get('/jobs/')
         self.assertEqual(rv.status_code, 401)
@@ -64,7 +64,7 @@ class TestJobsIndexPage(RCollateTestCase):
         rv = self.app.get('/jobs/', headers=self.auth_headers)
         self.assertIn('Job [' + job.job_key + ']', str(rv.data))
 
-class TestJobsNewPage(RCollateTestCase):
+class JobsNewPageTest(RCollateTestCase):
     def test_get_status_code(self):
         rv = self.app.get('/jobs/new/')
         self.assertEqual(rv.status_code, 200)
@@ -91,7 +91,7 @@ class TestJobsNewPage(RCollateTestCase):
         self.assertEqual(rv.status_code, 302)
         self.assertRegex(rv.location, '/jobs/[0-9a-zA-Z]+')
 
-class TestJobsShowPage(RCollateTestCase):
+class JobsShowPageTest(RCollateTestCase):
     def test_get_invalid_job(self):
         rv = self.app.get('/jobs/nonexistentjobkey/')
         self.assertEqual(rv.status_code, 404)
@@ -103,7 +103,7 @@ class TestJobsShowPage(RCollateTestCase):
         self.assertEqual(rv.status_code, 200)
         self.assertIn(job.job_key, str(rv.data))
 
-class TestJobsDeletePage(RCollateTestCase):
+class JobsDeletePageTest(RCollateTestCase):
     def test_delete_invalid_job(self):
         rv = self.app.post('/jobs/nonexistentjobkey/delete/')
         self.assertEqual(rv.status_code, 404)
@@ -114,7 +114,7 @@ class TestJobsDeletePage(RCollateTestCase):
         rv = self.app.post('/jobs/%s/delete' % job.job_key)
         self.assertEqual(rv.status_code, 301)
 
-class TestJobsEditPage(RCollateTestCase):
+class JobsEditPageTest(RCollateTestCase):
     def test_get_invalid_job(self):
         rv = self.app.get('/jobs/nonexistentjobkey/edit/')
         self.assertEqual(rv.status_code, 404)
