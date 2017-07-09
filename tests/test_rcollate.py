@@ -7,6 +7,8 @@ VALID_SUBREDDITS = ['hello', 'world']
 VALID_SUBREDDIT = VALID_SUBREDDITS[0]
 INVALID_SUBREDDIT = 'test'
 
+VALID_EMAIL = 'test@test.com'
+
 def mock_subreddit_exists(subreddit):
     return subreddit in VALID_SUBREDDITS
 
@@ -25,7 +27,7 @@ class RCollateTestCase(unittest.TestCase):
 
         rcollate.reddit.subreddit_exists = self.mocks['subreddit_exists']
 
-    def create_job(self, subreddit, target_email):
+    def create_job(self, subreddit=VALID_SUBREDDIT, target_email=VALID_EMAIL):
         with rcollate.app.app_context():
             job = rcollate.rcollate.create_job(subreddit, target_email)
         return job
@@ -58,7 +60,7 @@ class TestJobsIndexPage(RCollateTestCase):
         self.assertFalse('Job ' in str(rv.data))
 
     def test_with_jobs(self):
-        job = self.create_job('_test_', '_test_')
+        job = self.create_job()
         rv = self.app.get('/jobs/', headers=self.auth_headers)
         self.assertIn('Job [' + job.job_key + ']', str(rv.data))
 
@@ -96,10 +98,10 @@ class TestJobsShowPage(RCollateTestCase):
         self.assertIn('Job nonexistentjobkey not found', str(rv.data))
 
     def test_get_valid_job(self):
-        job = self.create_job('_test_', '_test_')
+        job = self.create_job()
         rv = self.app.get('/jobs/%s/' % job.job_key)
         self.assertEqual(rv.status_code, 200)
-        self.assertIn('_test_', str(rv.data))
+        self.assertIn(job.job_key, str(rv.data))
 
 class TestJobsDeletePage(RCollateTestCase):
     def test_delete_invalid_job(self):
@@ -108,7 +110,7 @@ class TestJobsDeletePage(RCollateTestCase):
         self.assertIn('Job nonexistentjobkey not found', str(rv.data))
 
     def test_delete_valid_job(self):
-        job = self.create_job('_test_', '_test_')
+        job = self.create_job()
         rv = self.app.post('/jobs/%s/delete' % job.job_key)
         self.assertEqual(rv.status_code, 301)
 
@@ -119,7 +121,7 @@ class TestJobsEditPage(RCollateTestCase):
         self.assertIn('Job nonexistentjobkey not found', str(rv.data))
 
     def test_get_valid_job(self):
-        job = self.create_job('_test_', '_test_')
+        job = self.create_job()
         rv = self.app.get('/jobs/%s/edit/' % job.job_key)
         self.assertEqual(rv.status_code, 200)
 
@@ -129,14 +131,14 @@ class TestJobsEditPage(RCollateTestCase):
         self.assertIn('Job nonexistentjobkey not found', str(rv.data))
 
     def test_post_valid_job_invalid_data(self):
-        job = self.create_job('_test_', '_test_')
+        job = self.create_job()
         rv = self.app.post('/jobs/%s/edit/' % job.job_key, data={
             'subreddit': INVALID_SUBREDDIT,
         })
         self.assertEqual(rv.status_code, 400)
 
     def test_post_valid_job_valid_data(self):
-        job = self.create_job('_test_', '_test_')
+        job = self.create_job()
         rv = self.app.post('/jobs/%s/edit/' % job.job_key, data={
             'subreddit': VALID_SUBREDDIT,
             'target_email': 'test@test.com',
