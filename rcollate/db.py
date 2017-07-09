@@ -1,3 +1,4 @@
+import os
 import random
 import string
 
@@ -13,13 +14,15 @@ from sqlalchemy import (
 from sqlalchemy.orm import mapper, sessionmaker
 
 from rcollate import logs
+from rcollate.config import settings
 from rcollate.models import Job
 
 JOBS_DB_FILE = 'db/jobs.db'
 JOBS_DB_SCHEMA = 'db/jobs_schema.sql'
 JOB_KEY_LENGTH = 20
 
-engine = create_engine('sqlite:///{}'.format(JOBS_DB_FILE), echo=True)
+os.makedirs(os.path.dirname(settings['db_file']), exist_ok=True)
+engine = create_engine('sqlite:///{}'.format(settings['db_file']), echo=True)
 metadata = MetaData()
 Session = sessionmaker(bind=engine)
 

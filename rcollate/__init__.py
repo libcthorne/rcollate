@@ -1,1 +1,1 @@
-from .rcollate import app
+from .rcollate import app, socketio
