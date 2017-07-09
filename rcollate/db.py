@@ -1,3 +1,4 @@
+import os
 import random
 import string
 
@@ -20,12 +21,8 @@ JOBS_DB_FILE = 'db/jobs.db'
 JOBS_DB_SCHEMA = 'db/jobs_schema.sql'
 JOB_KEY_LENGTH = 20
 
-if 'db_file' in settings:
-    engine_url = 'sqlite:///{}'.format(settings['db_file'])
-else:
-    engine_url = 'sqlite://'
-
-engine = create_engine(engine_url, echo=True)
+os.makedirs(os.path.dirname(settings['db_file']), exist_ok=True)
+engine = create_engine('sqlite:///{}'.format(settings['db_file']), echo=True)
 metadata = MetaData()
 Session = sessionmaker(bind=engine)
 

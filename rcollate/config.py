@@ -25,6 +25,7 @@ SETTINGS_SCHEMA = {
         'smtp_host',
         'smtp_timeout',
         'app_url',
+        'db_file',
     ],
     'additionalProperties': False,
 }
