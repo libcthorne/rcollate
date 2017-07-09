@@ -1,5 +1,6 @@
 import base64
 import unittest
+from unittest.mock import patch
 
 import rcollate
 
@@ -18,14 +19,16 @@ class RCollateTestCase(unittest.TestCase):
         rcollate.app.config['WTF_CSRF_ENABLED'] = False
         self.app = rcollate.app.test_client()
 
-        self.mocks = {}
-        self.mocks['subreddit_exists'] = rcollate.reddit.subreddit_exists
-        rcollate.reddit.subreddit_exists = mock_subreddit_exists
+        self.subreddit_exists_patcher = patch(
+            'rcollate.reddit.subreddit_exists',
+            mock_subreddit_exists
+        )
+        self.subreddit_exists_patcher.start()
 
     def tearDown(self):
         self.clear_jobs()
 
-        rcollate.reddit.subreddit_exists = self.mocks['subreddit_exists']
+        self.subreddit_exists_patcher.stop()
 
     def create_job(self, subreddit=VALID_SUBREDDIT, target_email=VALID_EMAIL):
         with rcollate.app.app_context():
