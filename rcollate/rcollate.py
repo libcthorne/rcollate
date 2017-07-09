@@ -96,7 +96,7 @@ def jobs_show(job_key):
 @app.route('/jobs/<string:job_key>/edit/', methods=['GET', 'POST'])
 def jobs_edit(job_key):
     if not db.is_valid_job_key(get_db_conn(), job_key):
-        return "Job %s not found" % job_key
+        return "Job %s not found" % job_key, 404
 
     if request.form:
         form = forms.JobForm(request.form)
@@ -138,7 +138,7 @@ def jobs_new():
 @app.route('/jobs/<string:job_key>/delete/', methods=['POST'])
 def jobs_delete(job_key):
     if not db.is_valid_job_key(get_db_conn(), job_key):
-        return "Job %s not found" % job_key
+        return "Job %s not found" % job_key, 404
 
     delete_job(job_key)
 
@@ -147,7 +147,7 @@ def jobs_delete(job_key):
 @app.route('/jobs/<string:job_key>/run/', methods=['POST'])
 def jobs_run(job_key):
     if not db.is_valid_job_key(get_db_conn(), job_key):
-        return "Job %s not found" % job_key
+        return "Job %s not found" % job_key, 404
 
     run_job(job_key)
 
