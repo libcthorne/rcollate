@@ -10,3 +10,4 @@ web_admin.json
 rcollate.log
 __pycache__
 .coverage
+*,cover
