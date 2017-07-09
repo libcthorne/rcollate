@@ -72,7 +72,7 @@ class TestJobsNewPage(RCollateTestCase):
     def test_post_invalid_subreddit(self):
         rv = self.app.post('/jobs/new/', data={
             'subreddit': INVALID_SUBREDDIT,
-            'target_email': 'test@test.com',
+            'target_email': VALID_EMAIL,
         })
         self.assertTrue('Please enter a valid subreddit' in str(rv.data))
 
@@ -86,7 +86,7 @@ class TestJobsNewPage(RCollateTestCase):
     def test_post_valid(self):
         rv = self.app.post('/jobs/new/', data={
             'subreddit': VALID_SUBREDDIT,
-            'target_email': 'test@test.com',
+            'target_email': VALID_EMAIL,
         })
         self.assertEqual(rv.status_code, 302)
         self.assertRegex(rv.location, '/jobs/[0-9a-zA-Z]+')
@@ -141,7 +141,7 @@ class TestJobsEditPage(RCollateTestCase):
         job = self.create_job()
         rv = self.app.post('/jobs/%s/edit/' % job.job_key, data={
             'subreddit': VALID_SUBREDDIT,
-            'target_email': 'test@test.com',
+            'target_email': VALID_EMAIL,
         })
         self.assertEqual(rv.status_code, 302)
         self.assertIn('/jobs/%s/' % job.job_key, rv.location)
