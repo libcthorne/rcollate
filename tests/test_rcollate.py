@@ -89,5 +89,17 @@ class TestJobsNewPage(RCollateTestCase):
         self.assertEqual(rv.status_code, 302)
         self.assertRegex(rv.location, '/jobs/[0-9a-zA-Z]+')
 
+class TestJobsShowPage(RCollateTestCase):
+    def test_get_invalid_job(self):
+        rv = self.app.get('/jobs/nonexistentjobkey/')
+        self.assertEqual(rv.status_code, 404)
+        self.assertIn('Job nonexistentjobkey not found', str(rv.data))
+
+    def test_get_valid_job(self):
+        job = self.create_job('_test_', '_test_')
+        rv = self.app.get('/jobs/%s/' % job.job_key)
+        self.assertEqual(rv.status_code, 200)
+        self.assertIn('_test_', str(rv.data))
+
 if __name__ == '__main__':
     unittest.main()
