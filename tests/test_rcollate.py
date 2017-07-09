@@ -145,6 +145,3 @@ class TestJobsEditPage(RCollateTestCase):
         })
         self.assertEqual(rv.status_code, 302)
         self.assertIn('/jobs/%s/' % job.job_key, rv.location)
-
-if __name__ == '__main__':
-    unittest.main()
