@@ -109,8 +109,8 @@ class TestJobsDeletePage(RCollateTestCase):
 
     def test_delete_valid_job(self):
         job = self.create_job('_test_', '_test_')
-        rv = self.app.post('/jobs/%s/' % job.job_key)
-        self.assertEqual(rv.status_code, 200)
+        rv = self.app.post('/jobs/%s/delete' % job.job_key)
+        self.assertEqual(rv.status_code, 301)
 
 if __name__ == '__main__':
     unittest.main()
