@@ -111,8 +111,8 @@ class JobsDeletePageTest(RCollateTestCase):
 
     def test_delete_valid_job(self):
         job = self.create_job()
-        rv = self.app.post('/jobs/%s/delete' % job.job_key)
-        self.assertEqual(rv.status_code, 301)
+        rv = self.app.post('/jobs/%s/delete/' % job.job_key)
+        self.assertEqual(rv.status_code, 302)
 
 class JobsEditPageTest(RCollateTestCase):
     def test_get_invalid_job(self):
