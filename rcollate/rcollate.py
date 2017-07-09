@@ -88,7 +88,7 @@ def jobs_index():
 @app.route('/jobs/<string:job_key>/')
 def jobs_show(job_key):
     if not db.is_valid_job_key(get_db_conn(), job_key):
-        return "Job %s not found" % job_key
+        return "Job %s not found" % job_key, 404
 
     return render_template('jobs_show.html', job=db.get_job(get_db_conn(), job_key))
 
