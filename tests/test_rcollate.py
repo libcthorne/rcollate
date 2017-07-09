@@ -112,5 +112,37 @@ class TestJobsDeletePage(RCollateTestCase):
         rv = self.app.post('/jobs/%s/delete' % job.job_key)
         self.assertEqual(rv.status_code, 301)
 
+class TestJobsEditPage(RCollateTestCase):
+    def test_get_invalid_job(self):
+        rv = self.app.get('/jobs/nonexistentjobkey/edit/')
+        self.assertEqual(rv.status_code, 404)
+        self.assertIn('Job nonexistentjobkey not found', str(rv.data))
+
+    def test_get_valid_job(self):
+        job = self.create_job('_test_', '_test_')
+        rv = self.app.get('/jobs/%s/edit/' % job.job_key)
+        self.assertEqual(rv.status_code, 200)
+
+    def test_post_invalid_job(self):
+        rv = self.app.post('/jobs/nonexistentjobkey/edit/')
+        self.assertEqual(rv.status_code, 404)
+        self.assertIn('Job nonexistentjobkey not found', str(rv.data))
+
+    def test_post_valid_job_invalid_data(self):
+        job = self.create_job('_test_', '_test_')
+        rv = self.app.post('/jobs/%s/edit/' % job.job_key, data={
+            'subreddit': INVALID_SUBREDDIT,
+        })
+        self.assertEqual(rv.status_code, 400)
+
+    def test_post_valid_job_valid_data(self):
+        job = self.create_job('_test_', '_test_')
+        rv = self.app.post('/jobs/%s/edit/' % job.job_key, data={
+            'subreddit': VALID_SUBREDDIT,
+            'target_email': 'test@test.com',
+        })
+        self.assertEqual(rv.status_code, 302)
+        self.assertIn('/jobs/%s/' % job.job_key, rv.location)
+
 if __name__ == '__main__':
     unittest.main()
