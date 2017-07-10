@@ -5,6 +5,7 @@ env
 *.egg
 *.egg-info
 secrets.json
+!config/tests_config/secrets.json
 jobs.db
 web_admin.json
 rcollate.log
