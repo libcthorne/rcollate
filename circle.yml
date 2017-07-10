@@ -5,5 +5,7 @@ machine:
     CONFIG_DIR: "config/tests_config"
 
 test:
+  override:
+    - nosetests --with-coverage --cover-package=rcollate
   post:
     - bash <(curl -s https://codecov.io/bash)
