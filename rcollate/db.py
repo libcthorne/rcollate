@@ -17,8 +17,6 @@ from rcollate import logs
 from rcollate.config import settings
 from rcollate.models import Job
 
-JOBS_DB_FILE = 'db/jobs.db'
-JOBS_DB_SCHEMA = 'db/jobs_schema.sql'
 JOB_KEY_LENGTH = 20
 
 os.makedirs(os.path.dirname(settings['db_file']), exist_ok=True)
