@@ -3,3 +3,7 @@ machine:
     version: 3.6.0
   environment:
     CONFIG_DIR: "config/tests_config"
+
+test:
+  post:
+    - bash <(curl -s https://codecov.io/bash)
