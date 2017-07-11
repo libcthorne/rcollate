@@ -5,6 +5,7 @@ init:
 	pip install -e .
 
 test:
-	CONFIG_DIR=config/tests_config nosetests --with-coverage --cover-package=rcollate
+	CONFIG_DIR=config/tests_config coverage run -m unittest discover tests
+	coverage report --include=rcollate/*
 
 .PHONY: init

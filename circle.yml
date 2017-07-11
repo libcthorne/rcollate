@@ -6,7 +6,7 @@ machine:
 
 test:
   override:
-    - nosetests --with-coverage --cover-package=rcollate
+    - coverage run -m unittest discover tests
   post:
     - bash <(curl -s https://codecov.io/bash)
 
