@@ -11,6 +11,8 @@ test:
     - bash <(curl -s https://codecov.io/bash)
 
 general:
+  artifacts:
+    - ".coverage"
   branches:
     only:
      - ci
