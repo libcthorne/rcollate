@@ -8,11 +8,10 @@ test:
   override:
     - coverage run -m unittest discover tests
   post:
+    - coverage report --include=rcollate/*
     - bash <(curl -s https://codecov.io/bash)
 
 general:
-  artifacts:
-    - ".coverage"
   branches:
     only:
      - ci
