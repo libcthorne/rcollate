@@ -8,12 +8,16 @@
 		<link href="{{ url_for('static', filename='jquery-ui-1.12.1.css') }}" rel="stylesheet"/>
 {% endblock %}
 {% block body %}
-	<form action="{{ request.path }}" method="post">
+	<form class="mui-form" action="{{ request.path }}" method="post">
 		{{ form.csrf_token }}
-		{{ render_field(form.subreddit) }}
-		<br/>
-		{{ render_field(form.target_email) }}
-		<br/>
-		<input type="submit" value="Create"/>
+		<div class="mui-textfield mui-textfield--float-label">
+			{{ render_field(form.subreddit, required=True) }}
+			<label>Subreddit</label>
+		</div>
+		<div class="mui-textfield mui-textfield--float-label">
+			{{ render_field(form.target_email, required=True) }}
+			<label>Email</label>
+		</div>
+		<input class="mui-btn mui-btn--primary mui-btn--raised" type="submit" value="Subscribe"/>
 	</form>
 {% endblock %}
