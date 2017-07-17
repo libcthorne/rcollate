@@ -13,7 +13,6 @@ setup(
         'Flask-WTF',
         'Jinja2==2.9.6',
         'jsonschema',
-        'nose',
         'praw==4.5.1',
         'sqlalchemy',
     ],
