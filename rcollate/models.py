@@ -1,3 +1,5 @@
+from datetime import datetime
+
 class Job(object):
     def __init__(
         self,
@@ -16,6 +18,22 @@ class Job(object):
         self.time_filter = time_filter
         self.job_id = job_id
         self.job_key = job_key
+
+    @property
+    def cron_trigger_datetime(self):
+        return datetime.strptime(
+            '{}:{}'.format(
+                self.cron_trigger['hour'],
+                self.cron_trigger.get('minute', 0),
+            ),
+            '%H:%M'
+        )
+
+    @property
+    def cron_trigger_str(self):
+        return self.cron_trigger_datetime.strftime(
+            '%I:%M%p'
+        )
 
     def __repr__(self):
         return "<Job(job_key=%s, subreddit=%s)>" % (

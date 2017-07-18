@@ -14,8 +14,6 @@ import rcollate.db as db
 import rcollate.reddit as reddit
 import rcollate.forms as forms
 
-DEFAULT_CRON_TRIGGER = {'hour': 6}
-
 app = Flask('rcollate')
 app.config['SECRET_KEY'] = secrets['session_secret_key']
 
@@ -50,11 +48,11 @@ def requires_admin(f):
         return f(*args, **kwargs)
     return decorated
 
-def create_job(subreddit, target_email):
+def create_job(subreddit, target_email, cron_trigger):
     job = Job(
         subreddit=subreddit,
         target_email=target_email,
-        cron_trigger=DEFAULT_CRON_TRIGGER,
+        cron_trigger=cron_trigger,
     )
 
     db.insert_job(get_db_conn(), job)
@@ -105,6 +103,7 @@ def jobs_edit(job_key):
         form = forms.JobForm(
             subreddit=job.subreddit,
             target_email=job.target_email,
+            email_time=job.cron_trigger_datetime,
         )
 
     if request.method == 'POST':
@@ -113,7 +112,7 @@ def jobs_edit(job_key):
                 job_key=job_key,
                 subreddit=form.subreddit.data,
                 target_email=form.target_email.data,
-                cron_trigger=DEFAULT_CRON_TRIGGER,
+                cron_trigger=form.email_time_cron_trigger,
             )
 
             return redirect(url_for('jobs_show', job_key=job_key))
@@ -132,6 +131,7 @@ def jobs_new():
         job = create_job(
             subreddit=form.subreddit.data,
             target_email=form.target_email.data,
+            cron_trigger=form.email_time_cron_trigger,
         )
 
         return redirect(url_for('jobs_show', job_key=job.job_key))

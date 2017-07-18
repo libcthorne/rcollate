@@ -1,7 +1,7 @@
 import re
 
 from flask_wtf import FlaskForm
-from wtforms import StringField
+from wtforms import DateTimeField, StringField
 from wtforms.validators import DataRequired, Regexp, ValidationError
 
 import rcollate.reddit as reddit
@@ -30,6 +30,23 @@ class JobForm(FlaskForm):
             ),
         ]
     )
+
+    email_time = DateTimeField(
+        'Time',
+        format='%I:%M%p',
+        validators=[
+            DataRequired(
+                message="Please enter a time",
+            ),
+        ]
+    )
+
+    @property
+    def email_time_cron_trigger(self):
+        return {
+            'hour': self.email_time.data.hour,
+            'minute': self.email_time.data.minute,
+        }
 
     def validate_subreddit(form, field):
         if not reddit.subreddit_exists(field.data):
