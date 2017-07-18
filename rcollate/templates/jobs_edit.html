@@ -13,12 +13,18 @@
 {% block body %}
 	<form action="{{ request.path }}" method="post">
 		{{ form.csrf_token }}
-		{{ render_field(form.subreddit) }}
-		<br/>
-		{{ render_field(form.target_email) }}
-		<br/>
-		{{ render_field(form.email_time, class_="email_time") }}
-		<br/>
-		<input type="submit" value="Save"/>
+		<div class="mui-textfield mui-textfield--float-label">
+			{{ render_field(form.subreddit, required=True) }}
+			<label>Subreddit</label>
+		</div>
+		<div class="mui-textfield mui-textfield--float-label">
+			{{ render_field(form.target_email, required=True) }}
+			<label>Email</label>
+		</div>
+		<div class="mui-textfield mui-textfield--float-label">
+			{{ render_field(form.email_time, required=True, class_="email_time") }}
+			<label>Time (UTC)</label>
+		</div>
+		<input class="mui-btn mui-btn--primary mui-btn--raised" type="submit" value="Save"/>
 	</form>
 {% endblock %}
