@@ -13,6 +13,7 @@
 {% block body %}
 	<form class="mui-form" action="{{ request.path }}" method="post">
 		{{ form.csrf_token }}
+		<legend>Subscribe to daily emails for your favourite subreddit</legend>
 		<div class="mui-textfield mui-textfield--float-label">
 			{{ render_field(form.subreddit, required=True) }}
 			<label>Subreddit</label>
