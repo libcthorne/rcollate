@@ -7,6 +7,9 @@ from flask_socketio import SocketIO
 import rcollate
 from rcollate.reddit import Subreddit
 
+DEFAULT_CRON_TRIGGER = {'hour': 7}
+VALID_EMAIL_TIME = '7:00am'
+
 VALID_SUBREDDITS = ['hello', 'world']
 VALID_SUBREDDIT = VALID_SUBREDDITS[0]
 INVALID_SUBREDDIT = 'test'
@@ -35,7 +38,7 @@ class RCollateTestCase(unittest.TestCase):
 
     def create_job(self, subreddit=VALID_SUBREDDIT, target_email=VALID_EMAIL):
         with rcollate.app.app_context():
-            job = rcollate.rcollate.create_job(subreddit, target_email)
+            job = rcollate.rcollate.create_job(subreddit, target_email, DEFAULT_CRON_TRIGGER)
         return job
 
     def clear_jobs(self):
@@ -93,6 +96,7 @@ class JobsNewPageTest(RCollateTestCase):
         rv = self.app.post('/jobs/new/', data={
             'subreddit': VALID_SUBREDDIT,
             'target_email': VALID_EMAIL,
+            'email_time': VALID_EMAIL_TIME,
         })
         self.assertEqual(rv.status_code, 302)
         self.assertRegex(rv.location, '/jobs/[0-9a-zA-Z]+')
@@ -148,6 +152,7 @@ class JobsEditPageTest(RCollateTestCase):
         rv = self.app.post('/jobs/%s/edit/' % job.job_key, data={
             'subreddit': VALID_SUBREDDIT,
             'target_email': VALID_EMAIL,
+            'email_time': VALID_EMAIL_TIME,
         })
         self.assertEqual(rv.status_code, 302)
         self.assertIn('/jobs/%s/' % job.job_key, rv.location)

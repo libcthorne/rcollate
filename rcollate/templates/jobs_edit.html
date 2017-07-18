@@ -3,9 +3,12 @@
 {% block head %}
 		<script type="text/javascript" src="{{ url_for('static', filename='jquery-3.2.1.js') }}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='jquery-ui-1.12.1.js') }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='jquery.timepicker.min.js') }}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='socket.io-2.0.3.js') }}"></script>
 		<script type="text/javascript" src="{{ url_for('static', filename='subreddit-search.js') }}"></script>
+		<script type="text/javascript" src="{{ url_for('static', filename='email-time.js') }}"></script>
 		<link href="{{ url_for('static', filename='jquery-ui-1.12.1.css') }}" rel="stylesheet"/>
+		<link href="{{ url_for('static', filename='jquery.timepicker.css') }}" rel="stylesheet"/>
 {% endblock %}
 {% block body %}
 	<form action="{{ request.path }}" method="post">
@@ -13,6 +16,8 @@
 		{{ render_field(form.subreddit) }}
 		<br/>
 		{{ render_field(form.target_email) }}
+		<br/>
+		{{ render_field(form.email_time, class_="email_time") }}
 		<br/>
 		<input type="submit" value="Save"/>
 	</form>

@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
-	{{ job.subreddit }} / {{ job.target_email }}
+	{{ job.subreddit }} / {{ job.target_email }} / {{ job.cron_trigger_str }}
 	<span>[</span>
 	<a href="/jobs/{{ job.job_key }}/edit/">edit</a>
 	<span>]</span>
