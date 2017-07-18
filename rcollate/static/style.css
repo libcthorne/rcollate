@@ -2,7 +2,7 @@ body {
   background-color: #EEEEEE;
 }
 
-input[value='Subscribe'] {
+input[value='Subscribe'], input[value='Save'] {
   width: 100%;
 }
 
