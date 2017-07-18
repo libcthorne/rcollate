@@ -5,3 +5,7 @@ body {
 input[value='Subscribe'] {
   width: 100%;
 }
+
+div.header-divider {
+  margin-bottom: 10px;
+}
