@@ -13,7 +13,6 @@
 {% block body %}
 	<form class="mui-form" action="{{ request.path }}" method="post">
 		{{ form.csrf_token }}
-		<legend>Subscribe to daily emails for your favourite subreddit</legend>
 		<div class="mui-textfield mui-textfield--float-label">
 			{{ render_field(form.subreddit, required=True) }}
 			<label>Subreddit</label>
@@ -26,6 +25,6 @@
 			{{ render_field(form.email_time, required=True, class_="email_time", value="06:00") }}
 			<label>Time (UTC)</label>
 		</div>
-		<input class="mui-btn mui-btn--primary mui-btn--raised" type="submit" value="Subscribe"/>
+		<input class="full-width mui-btn mui-btn--primary mui-btn--raised" type="submit" value="Subscribe"/>
 	</form>
 {% endblock %}

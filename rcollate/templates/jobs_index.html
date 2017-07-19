@@ -2,13 +2,6 @@
 {% block body %}
 	{% for job_key, job in jobs.items() %}
 		<a href="/jobs/{{ job_key }}/">Job [{{ job_key }}]: {{ job.subreddit }} / {{ job.target_email }}</a>
-		<span>[</span>
-		<a href="/jobs/{{ job_key }}/edit/">edit</a>
-		<span>,</span>
-		<form action="/jobs/{{ job_key }}/delete/" method="post">
-			<input type="submit" value="delete"/>
-		</form>
-		<span>]</span>
 		<br/>
 	{% endfor %}
 {% endblock %}

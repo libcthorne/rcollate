@@ -1,18 +1,24 @@
 {% extends "layout.html" %}
 {% block body %}
-	{{ job.subreddit }} / {{ job.target_email }} / {{ job.cron_trigger_str }}
-	<span>[</span>
-	<a href="/jobs/{{ job.job_key }}/edit/">edit</a>
-	<span>]</span>
+  <p>
+	<strong>Subreddit</strong>: {{ job.subreddit }}<br/>
+	<strong>Email</strong>: {{ job.target_email }}<br/>
+	<strong>Time (UTC)</strong>: {{ job.cron_trigger_str }}
+	</p>
 
-	<br/><br/>
-	<a href="/jobs/new/">New Job</a>
+	<form action="/jobs/{{ job.job_key }}/edit/" method="get">
+		<input class="full-width mui-btn mui-btn--small mui-btn--primary mui-btn--raised" type="submit" value="Edit"/>
+	</form>
 
 	<form action="/jobs/{{ job.job_key }}/delete/" method="post">
-		<input type="submit" value="delete"/>
+		<input class="full-width mui-btn mui-btn--small mui-btn--primary mui-btn--raised" onclick="return confirm('Are you sure you want to delete this subscription?');" type="submit" value="Delete"/>
 	</form>
 
 	<form action="/jobs/{{ job.job_key }}/run/" method="post">
-		<input type="submit" value="test email"/>
+		<input class="full-width mui-btn mui-btn--small mui-btn--primary mui-btn--raised" type="submit" value="Send Test Email"/>
+	</form>
+
+	<form action="/jobs/new/" method="get">
+		<input class="full-width mui-btn mui-btn--small mui-btn--primary mui-btn--raised" type="submit" value="Create New Job"/>
 	</form>
 {% endblock %}
